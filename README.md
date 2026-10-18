@@ -53,12 +53,15 @@ Run the tests and reproduce a local research manifest:
 .venv/bin/ruff format --check .
 .venv/bin/mypy src
 .venv/bin/pytest -q
-.venv/bin/pip-audit --local --progress-spinner off
+.venv/bin/pip-audit --local --skip-editable --progress-spinner off
 PYTHONPATH=src .venv/bin/python research/benchmarks/run_phase1.py examples/no_undo/daily_distinct.json --run-dir research/runs/local/my-run
+PYTHONPATH=src .venv/bin/python research/benchmarks/compare_tiny_reference.py examples/no_undo/daily_distinct.json --repeats 5 --output research/runs/local/paired.json
 ```
 
-The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. A single smoke run is not a benchmark or performance claim. [Research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the open evaluation questions. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
+The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. Phase 2 adds a paired repeated tiny-domain Z3/exhaustive-reference check and a sanitizer for publishing a clean commit-pinned run; see the [published run](research/runs/published/phase2-35b2001.json), [paired record](research/runs/published/phase2-35b2001-paired.json), [checkpoint](research/checkpoints/phase2.md), and [benchmark protocol](docs/benchmarks.md). These records are not external performance comparisons. [Research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the open evaluation questions. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
 
 ## Project stage
 
-Phase 0 research framing and this Phase 1 NoUndo slice are the current scope. Doppelgänger, Proof2Test, TimeProof, ChangeProof, RepairProof, ResourceProof, dbt and cloud adapters remain planned research directions. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
+Phase 0 research framing, the Phase 1 NoUndo slice, and Phase 2 hardening are the current scope. Phase 2 adds collision/error handling, wider differential/property/mutation tests and reproducibility checks; it does not broaden supported SQL. Doppelgänger, Proof2Test, TimeProof, ChangeProof, RepairProof, ResourceProof, dbt and cloud adapters remain planned research directions. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
+
+For a short live walkthrough after installation, use the [offline demo cue sheet](docs/demo.md); it calls only the shipped CLI and does not rely on a staged recording.

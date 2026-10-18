@@ -1,0 +1,84 @@
+{
+  "environment": {
+    "cpu_count": 10,
+    "cpu_model": "arm",
+    "machine": "arm64",
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "peak_rss_raw": 106971136,
+    "peak_rss_unit": "bytes"
+  },
+  "git_dirty": false,
+  "git_sha": "35b2001b45f55e663777fc3502629620985d4ac6",
+  "input_path": "examples/no_undo/daily_distinct.json",
+  "input_sha256": "76c965dcf82fa2a4b135d57a7f6f6d0de81f2d1b96ad05a6443af7bdab1fa0b3",
+  "input_size_bytes": 711,
+  "limitations": "Tiny synthetic obligation only; Python/Z3/DuckDB overheads differ; no external-tool or scalability claim.",
+  "max_memory_mb": 256,
+  "max_rows": 2,
+  "protocol": "paired warm in-process repeats, reference then solver; no cache or CPU isolation",
+  "samples": [
+    {
+      "duckdb_validated": true,
+      "reference_seconds": 0.00010295900028722826,
+      "reference_status": "COUNTEREXAMPLE_FOUND",
+      "reference_worlds_checked": 15,
+      "solver_seconds": 0.008052375000261236,
+      "solver_status": "CANDIDATE"
+    },
+    {
+      "duckdb_validated": true,
+      "reference_seconds": 6.750000011379598e-05,
+      "reference_status": "COUNTEREXAMPLE_FOUND",
+      "reference_worlds_checked": 15,
+      "solver_seconds": 0.005938500000411295,
+      "solver_status": "CANDIDATE"
+    },
+    {
+      "duckdb_validated": true,
+      "reference_seconds": 6.966699947952293e-05,
+      "reference_status": "COUNTEREXAMPLE_FOUND",
+      "reference_worlds_checked": 15,
+      "solver_seconds": 0.0059691249998650164,
+      "solver_status": "CANDIDATE"
+    },
+    {
+      "duckdb_validated": true,
+      "reference_seconds": 7.654199998796685e-05,
+      "reference_status": "COUNTEREXAMPLE_FOUND",
+      "reference_worlds_checked": 15,
+      "solver_seconds": 0.005693500000234053,
+      "solver_status": "CANDIDATE"
+    },
+    {
+      "duckdb_validated": true,
+      "reference_seconds": 7.233300038933521e-05,
+      "reference_status": "COUNTEREXAMPLE_FOUND",
+      "reference_worlds_checked": 15,
+      "solver_seconds": 0.005898833000173909,
+      "solver_status": "CANDIDATE"
+    }
+  ],
+  "schema_version": 1,
+  "seed": 7,
+  "summary": {
+    "mismatch_count": 0,
+    "reference_max_seconds": 0.00010295900028722826,
+    "reference_median_seconds": 7.233300038933521e-05,
+    "reference_min_seconds": 6.750000011379598e-05,
+    "repeats": 5,
+    "solver_max_seconds": 0.008052375000261236,
+    "solver_median_seconds": 0.005938500000411295,
+    "solver_min_seconds": 0.005693500000234053,
+    "solver_unknown_or_timeout_count": 0
+  },
+  "timeout_ms": 10000,
+  "timestamp_utc": "2026-10-18T07:26:42.995395+00:00",
+  "versions": {
+    "dataproof": "0.1.0a1",
+    "duckdb": "1.5.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.11.16",
+    "sqlglot": "29.0.1",
+    "z3": "5.3.1"
+  }
+}

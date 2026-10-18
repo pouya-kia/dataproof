@@ -1,0 +1,63 @@
+{
+  "configuration": {
+    "max_memory_mb": 256,
+    "max_rows": 2,
+    "seed": 7,
+    "timeout_ms": 10000
+  },
+  "environment": {
+    "child_peak_rss_raw": 107659264,
+    "child_peak_rss_unit": "bytes",
+    "child_system_cpu_seconds": 0.038703,
+    "child_user_cpu_seconds": 0.153884,
+    "cpu_count": 10,
+    "cpu_model": "arm",
+    "machine": "arm64",
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "ram_bytes": 17179869184
+  },
+  "git_dirty": false,
+  "git_sha": "35b2001b45f55e663777fc3502629620985d4ac6",
+  "input_path": "examples/no_undo/daily_distinct.json",
+  "input_sha256": "76c965dcf82fa2a4b135d57a7f6f6d0de81f2d1b96ad05a6443af7bdab1fa0b3",
+  "input_size_bytes": 711,
+  "outcome": {
+    "elapsed_seconds": 0.19888641599936818,
+    "exit_code": 0,
+    "metric_values": [
+      1,
+      2
+    ],
+    "status": "COUNTEREXAMPLE_FOUND",
+    "worlds_sha256": "aa463f015672872c2fc60be2dd6587d21d3881a19a8f8fdccbf1e62c3b4df2c3"
+  },
+  "published_evidence": {
+    "replay_sql": "examples/no_undo/evidence/replay.sql",
+    "witness": "examples/no_undo/evidence/witness.json"
+  },
+  "raw_log_hashes": {
+    "manifest_sha256": "7122bce08dda06043edbe6016c910fbbb1f66c6f22779241c65dbcc91612f025",
+    "stderr_empty": true,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_path_dependent": true,
+    "stdout_sha256": "f9669851e9777aec9656ee037d589f64dee1556c9b201e434d90aad92e424079"
+  },
+  "record_kind": "sanitized_clean_run",
+  "reproduction": [
+    "python3.11 -m venv .venv",
+    ".venv/bin/python -m pip install '.[dev]'",
+    "PYTHONPATH=src .venv/bin/python research/benchmarks/run_phase1.py examples/no_undo/daily_distinct.json --run-dir research/runs/local/new-run",
+    "Compare status, metrics, worlds_sha256 and published replay; elapsed time is not deterministic."
+  ],
+  "sanitization": "Absolute executable, workspace, run-artifact and stdout/stderr paths are omitted; hashes preserve provenance. No values or timings were changed.",
+  "schema_version": 1,
+  "timestamp_utc": "2026-10-18T07:26:42.774159+00:00",
+  "versions": {
+    "dataproof": "0.1.0a1",
+    "duckdb": "1.5.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.11.16",
+    "sqlglot": "29.0.1",
+    "z3": "5.3.1"
+  }
+}
