@@ -136,6 +136,19 @@ def _aggregate(spec: Spec, world: _World, mask: list[ZBool], agg: Aggregate) -> 
             )
             terms.append(z3.If(on, mapped, 0))
         return z3.Not(_ors(valid)), _sum(terms)
+    if agg.kind in {"min", "max"}:
+        assert all(value is None or type(value) is int for value in col.domain)
+        ranked = sorted(
+            ((value, code) for code, value in enumerate(col.domain) if type(value) is int),
+            reverse=agg.kind == "min",
+        )
+        extremum: ZInt = z3.IntVal(0)
+        for value, code in ranked:
+            present = _ors(
+                [z3.And(on, row[index] == code) for on, row in zip(valid, world.cells, strict=True)]
+            )
+            extremum = z3.If(present, value, extremum)
+        return z3.Not(_ors(valid)), extremum
     raise AssertionError(f"unexpected IR aggregate: {agg.kind}")
 
 

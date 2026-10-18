@@ -29,6 +29,14 @@ def _agg(agg: Aggregate, rows: tuple[Row, ...], spec: Spec) -> int | None:
         return len(set(values))
     if agg.kind == "sum":
         return sum(values) if values else None  # type: ignore[arg-type]
+    if agg.kind == "min":
+        integers = [value for value in values if type(value) is int]
+        assert len(integers) == len(values)
+        return min(integers) if integers else None
+    if agg.kind == "max":
+        integers = [value for value in values if type(value) is int]
+        assert len(integers) == len(values)
+        return max(integers) if integers else None
     raise AssertionError(f"unexpected IR aggregate: {agg.kind}")
 
 
