@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "table": {"name": "orders", "columns": [{"name": "amount", "type": "INTEGER", "nullable": true, "domain": [0, 1, null]}]},
+  "max_rows": 1,
+  "timeout_ms": 10000,
+  "max_memory_mb": 256,
+  "seed": 0,
+  "tests": [
+    {"id": "one_row", "sql": "SELECT COUNT(*) AS n FROM orders", "op": "=", "value": 1}
+  ],
+  "invariant": {"id": "positive_total", "sql": "SELECT SUM(amount) AS n FROM orders", "op": ">", "value": 0, "rationale": "Synthetic policy: an accepted single order must have a positive total."}
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "table": {"name": "orders", "columns": [
+    {"name": "id", "type": "INTEGER", "domain": [1, 2, 3]},
+    {"name": "amount", "type": "INTEGER", "domain": [-1, 0, 1, 2]}
+  ], "primary_key": ["id"]},
+  "max_rows": 3,
+  "timeout_ms": 10000,
+  "max_memory_mb": 256,
+  "seed": 0,
+  "tests": [
+    {"id": "three_rows", "sql": "SELECT COUNT(*) AS n FROM orders", "op": "=", "value": 3},
+    {"id": "total_two", "sql": "SELECT SUM(amount) AS n FROM orders", "op": "=", "value": 2}
+  ],
+  "invariant": {"id": "nonnegative_amount", "sql": "SELECT MIN(amount) AS n FROM orders", "op": ">=", "value": 0, "rationale": "Synthetic policy: every order amount must be nonnegative."}
+}

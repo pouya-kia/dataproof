@@ -27,29 +27,68 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def random_baseline(spec_path: Path, seed: int, attempts: int) -> dict[str, object]:
+def random_baseline(
+    spec_path: Path,
+    seed: int,
+    attempts: int,
+    *,
+    checkpoints: tuple[int, ...] = (),
+    deadline_seconds: float | None = None,
+) -> dict[str, object]:
+    """Preserve the original sampler; optional P2-R1 controls only observe/stop it."""
+    if attempts < 1 or any(cap < 1 or cap > attempts for cap in checkpoints):
+        raise ValueError("invalid random draw budget or checkpoint")
+    if deadline_seconds is not None and deadline_seconds <= 0:
+        raise ValueError("random deadline must be positive")
     spec = load_doppel_spec(spec_path)
     rng = random.Random(seed)
     legal = 0
     passing = 0
     found = False
     draws = 0
+    witness_size: int | None = None
+    snapshots: dict[str, dict[str, object]] = {}
+    deadline_reached = False
     start = perf_counter()
     for _ in range(attempts):
+        if deadline_seconds is not None and perf_counter() - start >= deadline_seconds:
+            deadline_reached = True
+            break
         draws += 1
         rows: tuple[Row, ...] = tuple(
             tuple(rng.choice(column.domain) for column in spec.table.columns)
             for _ in range(rng.randrange(spec.table.max_rows + 1))
         )
-        if not legal_world(spec.table, rows):
-            continue
-        legal += 1
-        checked = validate(spec, rows)
-        if all(test.truth is True for test in checked.tests):
-            passing += 1
-        if checked.valid:
-            found = True
+        if legal_world(spec.table, rows):
+            legal += 1
+            checked = validate(spec, rows)
+            if all(test.truth is True for test in checked.tests):
+                passing += 1
+            if checked.valid:
+                found = True
+                witness_size = len(rows)
+        if draws in checkpoints:
+            snapshots[str(draws)] = {
+                "draws": draws,
+                "legal_draws": legal,
+                "test_passing_draws": passing,
+                "found": found,
+            }
+        if found:
             break
+    for cap in checkpoints:
+        key = str(cap)
+        if key not in snapshots:
+            snapshots[key] = (
+                {
+                    "draws": draws,
+                    "legal_draws": legal,
+                    "test_passing_draws": passing,
+                    "found": True,
+                }
+                if found and draws < cap
+                else {"not_reached": True}
+            )
     return {
         "seed": seed,
         "attempt_cap": attempts,
@@ -57,6 +96,10 @@ def random_baseline(spec_path: Path, seed: int, attempts: int) -> dict[str, obje
         "legal_draws": legal,
         "test_passing_draws": passing,
         "found": found,
+        "first_hit_draw": draws if found else None,
+        "witness_size": witness_size,
+        "checkpoints": snapshots,
+        "deadline_reached": deadline_reached,
         "elapsed_seconds": perf_counter() - start,
     }
 

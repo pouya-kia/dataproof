@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "table": {"name": "orders", "columns": [
+    {"name": "customer_id", "type": "INTEGER", "domain": [1, 2, 3]},
+    {"name": "flag", "type": "INTEGER", "domain": [0, 1]}
+  ]},
+  "max_rows": 3,
+  "timeout_ms": 10000,
+  "max_memory_mb": 256,
+  "seed": 0,
+  "tests": [
+    {"id": "three_rows", "sql": "SELECT COUNT(*) AS n FROM orders", "op": "=", "value": 3},
+    {"id": "three_customers", "sql": "SELECT COUNT(DISTINCT customer_id) AS n FROM orders", "op": "=", "value": 3}
+  ],
+  "invariant": {"id": "no_flagged_row", "sql": "SELECT COUNT(*) AS n FROM orders WHERE flag = 1", "op": "=", "value": 0, "rationale": "Synthetic policy: no flagged order may enter the accepted dataset."}
+}
