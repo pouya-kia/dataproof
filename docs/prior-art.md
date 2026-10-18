@@ -2,16 +2,16 @@
 
 Checked on 2026-10-18 against project repositories and primary documentation. These are capability descriptions, not empirical comparisons or originality findings. Repository behavior and licenses must be rechecked before publication.
 
-| Project | Established overlap | Phase 1 comparison status |
+| Project | Established overlap | Observed relationship or limit |
 | --- | --- | --- |
-| [query-identifiability](https://github.com/danielhz/query-identifiability) | Relational query identifiability, closure certificates, witness discovery and view augmentation; README documents `make mini`; MIT | The stated formal setting is relational/FD views, so a daily aggregate obligation may be unmappable. Runnable baseline attempt pending. |
-| [VeriEQL](https://github.com/VeriEQL/VeriEQL) | Bounded SQL equivalence with integrity constraints and counterexamples; documented Python and Z3 workflow | An equivalence obligation is not automatically a view-determinacy obligation. Need a precise reduction and isolated run; pending. |
-| [Cosette](https://github.com/uwdb/Cosette) / [SQLSolver](https://github.com/SJTU-IPADS/SQLSolver) | SQL equivalence reasoning; Cosette README identifies it as deprecated in favor of QED | Compare supported operators and proof obligations later; no run. |
+| [query-identifiability](https://github.com/danielhz/query-identifiability) | Relational query identifiability, closure certificates, witness discovery and view augmentation; README documents `make mini`; MIT | A local certificate smoke passed, but it did not encode the grouped-aggregate obligation. |
+| [VeriEQL](https://github.com/VeriEQL/VeriEQL) | Bounded SQL equivalence with integrity constraints and counterexamples; documented Python and Z3 workflow | A local environment smoke failed on a Z3 `ctx` error; no comparable result was obtained. |
+| [Cosette](https://github.com/uwdb/Cosette) / [SQLSolver](https://github.com/SJTU-IPADS/SQLSolver) | SQL equivalence reasoning; Cosette README identifies it as deprecated in favor of QED | No comparable run; coverage for DataProof's obligation is unverified. |
 | [Spec-Lock-Diff](https://github.com/miloskimatheus/spec-lock-diff) | dbt development controls, numeric diffs and mutation style test adequacy; MIT | Different invariant and workflow; no run. |
 | [SQLGlot](https://github.com/tobymao/sqlglot) | SQL parser/transpiler; MIT | Dependency candidate, not a proof engine. |
 | [SQLMesh](https://github.com/SQLMesh/sqlmesh), [dbt](https://docs.getdbt.com/docs/build/incremental-models) | Transformation, plans, audits, tests and incremental models | Complementary workflow, not evaluated as a determinacy baseline. |
 | [SQLancer](https://github.com/sqlancer/sqlancer) | DBMS bug testing with generated SQL | Different oracle and target; no run. |
-| [DuckDB profiling](https://duckdb.org/docs/stable/dev/profiling), [BigQuery plan](https://cloud.google.com/bigquery/docs/query-plan-explanation), [Databricks Query Profile](https://docs.databricks.com/aws/en/sql/user/queries/query-profile) | Resource measurements and query plans already exist | ResourceProof is a future research question; a dashboard alone has no novelty claim. |
+| [DuckDB profiling](https://duckdb.org/docs/stable/dev/profiling), [BigQuery plan](https://cloud.google.com/bigquery/docs/query-plan-explanation), [Databricks Query Profile](https://docs.databricks.com/aws/en/sql/user/queries/query-profile) | Resource measurements and query plans already exist | Not part of the shipped NoUndo verifier; no comparative run. |
 
 Local baseline investigations on macOS ARM, Python 3.11, isolated outside this repository:
 

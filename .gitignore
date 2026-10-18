@@ -9,4 +9,7 @@ __pycache__/
 build/
 dist/
 research/runs/local/
+/research/private/
+/research/drafts/
+/research/papers/
 artifacts/
