@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from dataproof import doppel_cli
+from dataproof import doppel_cli, proof2test
 from dataproof.artifacts import ArtifactConflict, finish, prepare
 from dataproof.ir import Query
 from dataproof.models import Spec, SpecError, UnsupportedError, load_spec, output_dir_hint
@@ -196,6 +196,31 @@ def replay(path: Path, machine: bool) -> int:
     return EXIT_CODES[status]
 
 
+def export_test(witness: Path, target: Path, format_name: str, output: Path) -> int:
+    try:
+        names = (
+            proof2test.export_pytest(witness, target, output)
+            if format_name == "pytest"
+            else proof2test.export_dbt(witness, target, output)
+        )
+    except UnsupportedError as exc:
+        print(f"UNSUPPORTED: {exc}")
+        return EXIT_CODES["UNSUPPORTED"]
+    except proof2test.ExportConflict as exc:
+        print(f"INVALID_INPUT: {exc}")
+        return EXIT_CODES["INVALID_INPUT"]
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        print(f"INVALID_INPUT: {exc}")
+        return EXIT_CODES["INVALID_INPUT"]
+    except Exception as exc:
+        print(f"INCONCLUSIVE: backend error: {type(exc).__name__}")
+        return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
+    print("EXPORTED")
+    for name in names:
+        print(output / name)
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="dataproof")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -215,6 +240,13 @@ def main() -> None:
     doppel_replay = doppel_sub.add_parser("replay", help="validate a serialized blind spot")
     doppel_replay.add_argument("witness", type=Path)
     doppel_replay.add_argument("--json", action="store_true")
+    proof_parser = sub.add_parser("proof2test", help="export a validated regression fixture")
+    proof_sub = proof_parser.add_subparsers(dest="proof_command", required=True)
+    proof_export = proof_sub.add_parser("export")
+    proof_export.add_argument("witness", type=Path)
+    proof_export.add_argument("--target", type=Path, required=True)
+    proof_export.add_argument("--format", choices=("pytest", "dbt"), default="pytest")
+    proof_export.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "check":
         code = check(args.spec, args.output, args.json)
@@ -223,6 +255,8 @@ def main() -> None:
             code = doppel_cli.check(args.spec, args.output, args.json)
         else:
             code = doppel_cli.replay(args.witness, args.json)
+    elif args.command == "proof2test":
+        code = export_test(args.witness, args.target, args.format, args.output)
     else:
         code = replay(args.witness, args.json)
     sys.exit(code)

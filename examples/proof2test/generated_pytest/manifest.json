@@ -1,0 +1,8 @@
+{
+  "files": {
+    "fixture.json": "d5b39ddcf8a9e2481fbfe7fd7dfd6aefb5a0307fb23d558fe192533145ea1dd8",
+    "test_proof2test_clean_orders_d82ad4c2.py": "4e626dd5d4b7808f7eb31275f6124c4f769134a8479ddafa539f78325b621ecd"
+  },
+  "module": "proof2test",
+  "schema_version": 1
+}

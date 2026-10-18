@@ -18,3 +18,14 @@ For the distinct Doppelgänger obligation, use a different output directory:
 ```
 
 Show the one synthetic `amount = -1` row, the declared nonempty test evaluating TRUE, and the separately declared no-negative-amount invariant evaluating FALSE. The invariant's rationale is user supplied; DataProof does not establish that any real organization's business rule is true. The result is finite-bound evidence of a test blind spot, not a universal adequacy verdict.
+
+For the scoped Proof2Test follow-up, first install the documented development test dependency, then export from the versioned witness and run the **same generated test** against two supplied transformations:
+
+```sh
+.venv/bin/python -m pip install '.[dev]'
+.venv/bin/dataproof proof2test export examples/doppelganger/evidence/witness.json --target examples/proof2test/clamp_amount.contract.json --format pytest --output artifacts/proof2test-demo
+DATAPROOF_TARGET_SQL=examples/proof2test/defective.sql .venv/bin/pytest -q artifacts/proof2test-demo
+DATAPROOF_TARGET_SQL=examples/proof2test/corrected.sql .venv/bin/pytest -q artifacts/proof2test-demo
+```
+
+The first pytest invocation should exit 1 because the target emits `-1` while the separately declared expectation is `0`; the second should exit 0. Do not cut the failed-test output from a recording. The example policy is synthetic and declared in the target contract, not inferred from the witness. The [export contract](proof2test.md) documents the narrow SQL and dbt Core boundaries.

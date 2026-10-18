@@ -39,3 +39,11 @@ jobs:
           clean-venv/bin/dataproof replay artifacts/ci/witness.json
           clean-venv/bin/dataproof doppelganger check examples/doppelganger/nonnegative_amount.json --output artifacts/ci-doppel
           clean-venv/bin/dataproof doppelganger replay artifacts/ci-doppel/witness.json
+          clean-venv/bin/dataproof proof2test export examples/doppelganger/evidence/witness.json --target examples/proof2test/clamp_amount.contract.json --format pytest --output artifacts/ci-proof2test
+          clean-venv/bin/python -m pip install pytest==9.1.1
+          clean-venv/bin/python -c "import dataproof; assert 'site-packages' in dataproof.__file__"
+          if DATAPROOF_TARGET_SQL=examples/proof2test/defective.sql clean-venv/bin/python -m pytest -q -c /dev/null -p no:cacheprovider artifacts/ci-proof2test > artifacts/ci-proof2test-defective.log 2>&1; then
+            echo 'Defective target unexpectedly passed'; exit 1
+          fi
+          grep -q 'target output bag differs' artifacts/ci-proof2test-defective.log
+          DATAPROOF_TARGET_SQL=examples/proof2test/corrected.sql clean-venv/bin/python -m pytest -q -c /dev/null -p no:cacheprovider artifacts/ci-proof2test
