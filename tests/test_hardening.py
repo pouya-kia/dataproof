@@ -176,7 +176,10 @@ def test_versioned_golden_witness_regenerates(base_spec: dict[str, Any], tmp_pat
     actual = json.loads(generated.read_text())
     assert actual["worlds"] == expected["worlds"]
     assert actual["worlds_sha256"] == expected["worlds_sha256"]
-    assert actual["view_rows"] == expected["view_rows"]
+    # GROUP BY without ORDER BY has bag semantics, not a stable output order.
+    assert [Counter(map(tuple, rows)) for rows in actual["view_rows"]] == [
+        Counter(map(tuple, rows)) for rows in expected["view_rows"]
+    ]
     assert actual["metric_values"] == expected["metric_values"]
     assert (tmp_path / "out/replay.sql").read_text() == (
         ROOT / "examples/no_undo/evidence/replay.sql"
