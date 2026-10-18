@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from copy import deepcopy
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -138,3 +139,29 @@ def test_filter_bag_null_and_row_order_metamorphism(base_spec: dict[str, object]
         query = parse_query(sql, spec, metric=True)
         assert evaluate_for_test(query, rows, spec) == ((expected,),)
         assert evaluate_for_test(query, rows[::-1], spec) == ((expected,),)
+
+
+def test_filter_mutation_is_caught_by_duckdb(
+    base_spec: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import dataproof.reference_enumerator as reference
+
+    spec = parse_spec(base_spec)
+    sql = "SELECT COUNT(*) AS n FROM orders WHERE customer_id = 1"
+    query = parse_query(sql, spec, metric=True)
+    world = ((date(2026, 1, 1), 2, 10),)
+    assert evaluate_for_test(query, world, spec) == ((0,),)
+    original = reference._evaluate
+    monkeypatch.setattr(
+        reference,
+        "_evaluate",
+        lambda q, rows, parsed: original(replace(q, predicate=None), rows, parsed),
+    )
+    con = duckdb.connect(":memory:", config={"enable_external_access": "false"})
+    try:
+        con.execute("CREATE TABLE orders (day DATE, customer_id INTEGER, amount INTEGER)")
+        con.execute("INSERT INTO orders VALUES (?, ?, ?)", world[0])
+        assert con.execute(sql).fetchall() == [(0,)]
+        assert evaluate_for_test(query, world, spec) != ((0,),)
+    finally:
+        con.close()

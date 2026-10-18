@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 import duckdb
 import pytest
@@ -99,3 +100,34 @@ def test_extrema_cli_witness_replays(tmp_path: Path) -> None:
     path.write_text(json.dumps(raw), encoding="utf-8")
     assert check(path, None, False) == 0
     assert validate_serialized(tmp_path / "out/witness.json").valid
+
+
+def test_max_mutation_is_caught_by_duckdb(
+    base_spec: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import dataproof.reference_enumerator as reference
+
+    raw = deepcopy(base_spec)
+    raw["table"]["columns"][2]["domain"] = [-3, 10]
+    spec = parse_spec(raw)
+    sql = "SELECT MAX(amount) AS x FROM orders"
+    query = parse_query(sql, spec, metric=True)
+    day = spec.columns[0].domain[0]
+    world = ((day, 1, -3), (day, 2, 10))
+    assert evaluate_for_test(query, world, spec) == ((10,),)
+    original = reference._agg
+
+    def broken(agg: Any, rows: Any, parsed: Any) -> Any:
+        if agg.kind == "max":
+            return -3
+        return original(agg, rows, parsed)
+
+    monkeypatch.setattr(reference, "_agg", broken)
+    con = duckdb.connect(":memory:", config={"enable_external_access": "false"})
+    try:
+        con.execute("CREATE TABLE orders (day DATE, customer_id INTEGER, amount INTEGER)")
+        con.executemany("INSERT INTO orders VALUES (?, ?, ?)", world)
+        assert con.execute(sql).fetchall() == [(10,)]
+        assert evaluate_for_test(query, world, spec) != ((10,),)
+    finally:
+        con.close()

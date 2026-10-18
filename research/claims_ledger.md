@@ -7,6 +7,7 @@
 | N3 | DataProof has a distinct research contribution | Query-identifiability already studies witness discovery and augmentation | No comparative experiments yet | Unknown | UNTESTED | No novelty claim |
 | N4 | Complete daily SUM values determine complete disjoint roll-up SUM | NULL and integer semantics need a sound theorem | No theorem implemented | Future fragment | UNTESTED | No positive proof claim |
 | N5 | Phase 2 differential checks detect selected semantic faults | Finite generated cases cannot rule out shared bugs | `tests/test_hardening.py`; `research/runs/published/phase2-35b2001-paired.json` at source SHA `35b2001` | Admitted finite NULL/bag/key/aggregate cases only | SUPPORTED_WITHIN_SCOPE | This corpus agrees with DuckDB and detects an injected COUNT DISTINCT error |
+| N6 | Guarded row filters and integer extrema preserve three-way agreement in tested tiny worlds | Routine operators exist in other SQL systems; finite worlds do not prove full fragment correctness | `tests/test_phase3_filters.py`, `tests/test_phase3_extrema.py`; clean records at `fb94148` and `8076042` | Guarded predicates and direct integer `MIN`/`MAX` within explicit finite domains | SUPPORTED_WITHIN_SCOPE | The tested Phase 3 queries agree with the finite reference and independent DuckDB execution; no novelty or universal proof claim |
 
 AI collaboration audit: Codex assisted with Phase 0 document drafting and source discovery on 2026-10-18. Human review is required for formal claims, experiment reruns, authorship and venue disclosures.
 
