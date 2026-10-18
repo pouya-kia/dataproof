@@ -41,6 +41,17 @@ Two counterchecks are included:
 
 Both currently return `BOUNDED_NO_COUNTEREXAMPLE` (exit code 3). The first forbids a customer appearing twice; the second retains daily SUM values. These are finite-bound findings, **not universal preservation proofs**. No `PROVEN_WITHIN_FRAGMENT` implementation ships.
 
+## Find a declared test blind spot
+
+Doppelgänger is a separate, one-dataset check. The example explicitly declares that settled orders must not have negative amounts, while its existing test checks only that at least one order exists. DataProof searches for a *synthetic* dataset where that test is SQL TRUE and the independent invariant is SQL FALSE:
+
+```sh
+.venv/bin/dataproof doppelganger check examples/doppelganger/nonnegative_amount.json --output artifacts/doppel-demo
+.venv/bin/dataproof doppelganger replay artifacts/doppel-demo/witness.json
+```
+
+The admitted witness is one row with `amount = -1`; DuckDB independently checks the source assertions and the generated SQL ends in `REPLAY_OK`. The rationale is supplied by the user, not inferred by DataProof. See the [Doppelgänger contract and acceptance matrix](docs/doppelganger.md). A bounded miss (`BOUNDED_NO_BLIND_SPOT`, exit 3) is not proof of test adequacy; `INCONSISTENT_TESTS` (exit 9) means the declared tests have no legal passing dataset in this finite scope. SQL UNKNOWN is neither a passing test nor a confirmed invariant failure. Unsupported SQL and failed replay never produce a successful finding.
+
 ## Scope and evidence
 
 The admitted fragment is a single synthetic table with finite `INTEGER`/`DATE` domains, at most three rows per world, one grouped aggregate view and one scalar aggregate metric. Aggregates are `COUNT(*)`, `COUNT(column)`, `COUNT(DISTINCT column)`, exact integer `SUM`, and direct integer `MIN`/`MAX`. Each query may have one guarded row filter: integer-column equality to a signed integer literal, `IS NULL`, or `IS NOT NULL`. NULL, duplicate bags and empty inputs are handled in this fragment. SQLGlot parses and checks the guarded IR; Z3 searches; independent DuckDB execution accepts or rejects the serialized candidate. Unsupported joins, compound filters, windows, UDFs, approximate arithmetic, other dialects and data-changing SQL fail closed. See [semantics](docs/semantics.md), [limitations](docs/limitations.md), and [architecture](docs/architecture.md).
@@ -64,6 +75,6 @@ The run manifest records exact input hash, seed, versions, Git state, machine me
 
 ## Project stage
 
-Phases 0–3 are complete: research framing, the initial NoUndo slice, hardening, and the conservative guarded SQL expansion described above. Additional analyses are not part of the installed tool. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
+Phases 0–3 established the NoUndo verifier; the Phase 4 Doppelgänger slice adds the explicitly declared test-blind-spot workflow above. Other analyses are not part of the installed tool. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
 
 For a short live walkthrough after installation, use the [offline demo cue sheet](docs/demo.md); it calls only the shipped CLI and does not rely on a staged recording.

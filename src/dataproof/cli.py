@@ -11,6 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from dataproof import doppel_cli
 from dataproof.artifacts import ArtifactConflict, finish, prepare
 from dataproof.ir import Query
 from dataproof.models import Spec, SpecError, UnsupportedError, load_spec, output_dir_hint
@@ -205,9 +206,23 @@ def main() -> None:
     replay_parser = sub.add_parser("replay", help="validate serialized witness and replay.sql")
     replay_parser.add_argument("witness", type=Path)
     replay_parser.add_argument("--json", action="store_true")
+    doppel_parser = sub.add_parser("doppelganger", help="find a declared test blind spot")
+    doppel_sub = doppel_parser.add_subparsers(dest="doppel_command", required=True)
+    doppel_check = doppel_sub.add_parser("check", help="search one legal synthetic dataset")
+    doppel_check.add_argument("spec", type=Path)
+    doppel_check.add_argument("--output", type=Path)
+    doppel_check.add_argument("--json", action="store_true")
+    doppel_replay = doppel_sub.add_parser("replay", help="validate a serialized blind spot")
+    doppel_replay.add_argument("witness", type=Path)
+    doppel_replay.add_argument("--json", action="store_true")
     args = parser.parse_args()
     if args.command == "check":
         code = check(args.spec, args.output, args.json)
+    elif args.command == "doppelganger":
+        if args.doppel_command == "check":
+            code = doppel_cli.check(args.spec, args.output, args.json)
+        else:
+            code = doppel_cli.replay(args.witness, args.json)
     else:
         code = replay(args.witness, args.json)
     sys.exit(code)

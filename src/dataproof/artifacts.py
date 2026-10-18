@@ -77,7 +77,7 @@ def prepare(directory: Path) -> None:
     _record(directory, {})
 
 
-def finish(directory: Path) -> None:
+def finish(directory: Path, *, success_status: str = "COUNTEREXAMPLE_FOUND") -> None:
     """Publish ownership only for this run's completed outputs."""
     result_path = directory / "result.json"
     if not result_path.exists():
@@ -86,12 +86,12 @@ def finish(directory: Path) -> None:
         _record(directory, {})
         return
     result = json.loads(result_path.read_text(encoding="utf-8"))
-    if result.get("status") != "COUNTEREXAMPLE_FOUND":
+    if result.get("status") != success_status:
         for name in ("witness.json", "replay.sql"):
             (directory / name).unlink(missing_ok=True)
     owned = {name: _digest(directory / name) for name in NAMES if (directory / name).exists()}
     if (
-        result.get("status") == "COUNTEREXAMPLE_FOUND"
+        result.get("status") == success_status
         and not {"witness.json", "replay.sql"} <= owned.keys()
     ):
         raise ArtifactConflict("successful result is missing witness or replay SQL")
