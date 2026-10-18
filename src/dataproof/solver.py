@@ -20,6 +20,7 @@ class SearchResult:
     status: str
     worlds: tuple[tuple[Row, ...], tuple[Row, ...]] | None
     reason: str | None
+    reason_code: str | None = None
 
 
 @dataclass
@@ -122,7 +123,29 @@ def _different(a: ZValue, b: ZValue) -> ZBool:
     return z3.Not(_equal(a, b))
 
 
+def _unknown_code(reason: str) -> str:
+    normalized = reason.lower()
+    if "memory" in normalized:
+        return "MEMORY_LIMIT"
+    if "timeout" in normalized or "canceled" in normalized:
+        return "TIMEOUT"
+    return "UNKNOWN"
+
+
 def search(spec: Spec, view: Query, metric: Query) -> SearchResult:
+    try:
+        return _search(spec, view, metric)
+    except MemoryError:
+        return SearchResult("INCONCLUSIVE", None, "solver memory exhausted", "MEMORY_LIMIT")
+    except Exception as exc:
+        # Z3 may fail during setup, check, reason extraction, or model decoding.
+        # None of these failures is evidence for either SAT or UNSAT.
+        return SearchResult(
+            "INCONCLUSIVE", None, f"solver error: {type(exc).__name__}", "SOLVER_ERROR"
+        )
+
+
+def _search(spec: Spec, view: Query, metric: Query) -> SearchResult:
     z3.set_param("memory_max_size", spec.max_memory_mb)
     solver = z3.Optimize()
     solver.set("timeout", spec.timeout_ms)
@@ -162,7 +185,10 @@ def search(spec: Spec, view: Query, metric: Query) -> SearchResult:
     if outcome == z3.unsat:
         return SearchResult("BOUNDED_NO_COUNTEREXAMPLE", None, None)
     if outcome == z3.unknown:
-        return SearchResult("INCONCLUSIVE", None, solver.reason_unknown())
+        reason = solver.reason_unknown()
+        return SearchResult("INCONCLUSIVE", None, reason, _unknown_code(reason))
+    if outcome != z3.sat:
+        return SearchResult("INCONCLUSIVE", None, "unexpected solver result", "SOLVER_ERROR")
     model = solver.model()
 
     def decode(world: _World) -> tuple[Row, ...]:

@@ -200,6 +200,19 @@ def test_invalid_candidate_and_tampered_replay(
     assert not validate_serialized(witness).valid
 
 
+@pytest.mark.parametrize("table_name", ["d1_view", "d2_view", "d1_metric", "d2_metric"])
+def test_source_table_cannot_collide_with_replay_tables(
+    base_spec: dict[str, object], tmp_path: Path, table_name: str
+) -> None:
+    raw = deepcopy(base_spec)
+    raw["table"]["name"] = table_name
+    raw["views"] = [raw["views"][0].replace("orders", table_name)]
+    raw["metric"] = raw["metric"].replace("orders", table_name)
+    raw["output_dir"] = str(tmp_path / "out")
+    assert check(_write_spec(tmp_path, raw), None, False) == 0
+    assert validate_serialized(tmp_path / "out/witness.json").valid
+
+
 def test_deliberately_wrong_solver_model_is_rejected(
     base_spec: dict[str, object], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

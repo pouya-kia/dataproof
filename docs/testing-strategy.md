@@ -20,4 +20,8 @@ After each edit, run the focused test and affected regression set. Before a comm
 
 The core eight scenarios are versioned in `tests/fixtures/core_cases.json`: overlapping versus disjoint customers; constrained cross-day uniqueness; complete daily SUM roll-up as bounded only; NULL COUNT distinctions; duplicate bag rows; nullable SUM; invalid key; unsupported window SQL. Additional tests cover empty source/all-NULL SUM, destructive SQL, deterministic seeds, row permutation invariance where valid, deliberately wrong candidate rejection, and timeout/unknown outcomes. Future Phase 2 hardening expands randomized and mutation coverage; it does not weaken Phase 1 acceptance.
 
+## Phase 2 impact gate
+
+Replay-name changes require the four source-name collision regressions, serialized golden replay, DuckDB SQL execution, CLI, and all original cases. Solver/error-path changes require fault injection for timeout, memory, unknown, and exceptions; search/reference agreement; witness rejection; status/exit mapping; and full CLI replay. The complete pre-commit gate remains the Phase 1 gate above, including build and clean-install smoke. No CI failure is waived.
+
 False claim threats: bounded UNSAT promoted to proof, a bad SMT aggregate encoding, a result comparison that drops duplicates, implicit casts, and replay SQL that does not assert every stated fact. The independent DuckDB executor and exhaustive tiny-domain reference must catch these before a witness can be published.

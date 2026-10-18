@@ -32,6 +32,12 @@ def _quoted(name: str) -> str:
     return f'"{name}"'
 
 
+def _replay_table(label: str, kind: str) -> str:
+    # ':' is excluded by the input identifier grammar, so a legal source table
+    # cannot collide with an internal replay table in the same schema.
+    return _quoted(f"__dataproof::{label}_{kind}")
+
+
 def _literal(value: Any) -> str:
     if value is None:
         return "NULL"
@@ -115,15 +121,19 @@ def make_replay_sql(spec: Spec, left: tuple[Row, ...], right: tuple[Row, ...]) -
             f"SELECT CASE WHEN COUNT(*) <= {spec.max_rows} THEN 1 "
             f"ELSE error('row bound violated') END FROM {_quoted(spec.table)};"
         )
-        lines.append(f"CREATE TABLE {label}_view AS {spec.views[0]};")
-        lines.append(f"CREATE TABLE {label}_metric AS {spec.metric};")
+        lines.append(f"CREATE TABLE {_replay_table(label, 'view')} AS {spec.views[0]};")
+        lines.append(f"CREATE TABLE {_replay_table(label, 'metric')} AS {spec.metric};")
+    d1_view = _replay_table("d1", "view")
+    d2_view = _replay_table("d2", "view")
+    d1_metric = _replay_table("d1", "metric")
+    d2_metric = _replay_table("d2", "metric")
     lines.append(
         "SELECT CASE WHEN "
         "(SELECT COUNT(*) FROM ("
-        "(SELECT * FROM d1_view EXCEPT ALL SELECT * FROM d2_view) "
-        "UNION ALL (SELECT * FROM d2_view EXCEPT ALL SELECT * FROM d1_view)"
+        f"(SELECT * FROM {d1_view} EXCEPT ALL SELECT * FROM {d2_view}) "
+        f"UNION ALL (SELECT * FROM {d2_view} EXCEPT ALL SELECT * FROM {d1_view})"
         ")) = 0 AND "
-        "(SELECT * FROM d1_metric) IS DISTINCT FROM (SELECT * FROM d2_metric) "
+        f"(SELECT * FROM {d1_metric}) IS DISTINCT FROM (SELECT * FROM {d2_metric}) "
         "THEN 'REPLAY_OK' ELSE error('witness assertion failed') END AS replay_status;"
     )
     return "\n".join(lines) + "\n"

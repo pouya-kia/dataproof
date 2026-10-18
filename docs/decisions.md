@@ -12,3 +12,9 @@ Date: 2026-10-18. Status: proposed implementation contract, pending Phase 1 vali
 Open decisions: broader SQL grammar, foreign keys, DECIMAL precision, timestamp semantics, multiple tables/views, proof of SUM roll-up, PostgreSQL differential checks, and provider adapters. These require later authorization and evidence.
 
 Phase 0 acceptance: a falsifiable research question, prior-art matrix, explicit semantics and test impact plan, two runnable baseline investigations, and a reviewable Phase 1 design. Phase 1 acceptance: eight core fixtures, legal pair-world replay, a tiny exhaustive cross-check, bounded statuses, offline CLI, and a green full gate. Paper readiness remains `NOT_READY`.
+
+## Phase 2 hardening decision
+
+The four replay snapshot tables use quoted names containing `:`. The input grammar admits only simple identifiers without `:`, so no legal source table can collide with them. A red regression reproduced collisions for all four former names before this change. The SQL still executes the original view and KPI queries in DuckDB and compares retained rows with `EXCEPT ALL` in both directions.
+
+Z3 `unknown`, memory exhaustion and unexpected solver errors are `INCONCLUSIVE`, never bounded UNSAT. Unexpected validation/backend errors also remain inconclusive and cannot publish a witness. A completed candidate still must pass both in-memory and serialized independent DuckDB checks; an actual disagreement is `INVALID_CANDIDATE`. These decisions preserve the existing SQL fragment and status meanings.
