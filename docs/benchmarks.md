@@ -1,0 +1,5 @@
+# Reproducible measurement protocol
+
+Phase 1 runs are correctness smoke records, not performance benchmarks. Use `research/benchmarks/run_phase1.py` with a fixed spec and a new `research/runs/local/<run-id>` directory. It captures input hash and size, source Git SHA and dirty flag, exact command, exit status, versions, CPU/RAM/OS metadata where available, wall time, child CPU and peak RSS with explicit units, stdout/stderr and witness/replay paths. Missing machine facts remain null. The script does not aggregate one run into a speed claim.
+
+A future comparative benchmark requires a frozen workload and license, identical or explicitly mapped obligations, isolated installs, timeout and memory limits, warm/cold cache rules, justified repeat count, failure accounting, variance and uncertainty. Run query-identifiability and VeriEQL only on accurately mapped fragments; an unsupported obligation is not a baseline failure. The local exhaustive enumerator is a small correctness reference rather than a scalability baseline. Record negative results and baseline wins in the claims ledger.

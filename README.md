@@ -1,40 +1,64 @@
 # DataProof
 
-**Evidence-driven verification for SQL-centric data pipelines.**
-
-DataProof is an early-stage, research-driven open-source project exploring how executable counterexamples can expose gaps in the guarantees of analytical data pipelines.
-
-> **Status: research and engineering setup.** No verification engine, proof results, CLI, or database integrations have been released yet. Do not interpret the roadmap as implemented functionality.
-
-## The first problem: NoUndo
-
-Suppose a pipeline retains a set of aggregate views `V` and later needs to calculate a KPI `Q`. Are the retained views sufficient to determine that KPI?
-
-A *non-determinacy witness* consists of two source databases `D1` and `D2` satisfying the declared schema and constraints, such that:
+**Can your saved daily summaries still answer a monthly question?** Two synthetic order tables can have the same daily order count, revenue and distinct-customer count while their monthly distinct-customer counts are **1 and 2**. DataProof's first NoUndo slice searches for such a pair, then independently runs the original SQL in DuckDB and writes a replayable witness.
 
 ```text
-V(D1) == V(D2)
-Q(D1) != Q(D2)
+V(D1) == V(D2)   but   Q(D1) != Q(D2)
 ```
 
-For example, two days can have equal daily order counts, revenue totals, and distinct-customer counts, while having different **monthly distinct-customer** counts due to cross-day overlap. This is an information-preservation question, not proof that backups or original source data have been deleted.
+The witness shows that the declared retained view does not determine the KPI under the stated schema and constraints. It does not show that backups or source records have been deleted. This is an early, deliberately limited research implementation.
 
-The first implementation milestone will investigate a deliberately limited SQL fragment, a bounded two-world search, and **independent DuckDB replay** of candidate witnesses. An unsuccessful bounded search must never be described as a universal correctness proof.
+## Run the local example
 
-## Principles
+Python 3.11 or newer is required. Package acquisition may require a network once; the installed core runs locally without an account, API key, cloud service or LLM.
 
-- **Correctness before coverage:** distinguish validated counterexamples, scoped proofs, bounded negative results, unsupported inputs, and inconclusive runs.
-- **Offline core:** no required cloud account, LLM API, API key, or paid service.
-- **Reproducible research:** publish assumptions, seeds, versions, benchmark methods, negative results, and executable evidence when available.
-- **Honest prior art:** query determinacy, SQL verification, and data-quality testing are existing research areas; novelty is a hypothesis to evaluate.
-- **Real engineering:** tests, regression checks, reviewable changes, and scoped Conventional Commits.
+```sh
+python3.11 -m venv .venv
+.venv/bin/python -m pip install .
+.venv/bin/dataproof check examples/no_undo/daily_distinct.json --output artifacts/demo
+.venv/bin/dataproof replay artifacts/demo/witness.json
+```
 
-## Planned modules (not yet implemented)
+Representative output from the tested macOS/Python 3.11 environment:
 
-NoUndo, Doppelgänger, Proof2Test, TimeProof, ChangeProof, RepairProof, and ResourceProof.
+```text
+COUNTEREXAMPLE_FOUND
+witness: artifacts/demo/witness.json
+replay SQL: artifacts/demo/replay.sql
+COUNTEREXAMPLE_FOUND
+```
+
+The JSON reports both world tables, equal retained view rows, monthly metrics `1` and `2`, assumptions, bounds, seed, versions and a world hash. `replay.sql` can also run directly in DuckDB and ends with `REPLAY_OK`. The included [example specification](examples/no_undo/daily_distinct.json) and [versioned witness](examples/no_undo/evidence/witness.json) are entirely synthetic. `dataproof check ... --json` prints the machine-readable result.
+
+Two counterchecks are included:
+
+```sh
+.venv/bin/dataproof check examples/no_undo/constrained_customer.json
+.venv/bin/dataproof check examples/no_undo/daily_sum.json
+```
+
+Both currently return `BOUNDED_NO_COUNTEREXAMPLE` (exit code 3). The first forbids a customer appearing twice; the second retains daily SUM values. These are finite-bound findings, **not universal preservation proofs**. No `PROVEN_WITHIN_FRAGMENT` implementation ships.
+
+## Scope and evidence
+
+The admitted fragment is a single synthetic table with finite `INTEGER`/`DATE` domains, at most three rows per world, one daily grouped aggregate view and one scalar aggregate metric. Aggregates are `COUNT(*)`, `COUNT(column)`, `COUNT(DISTINCT column)` and exact integer `SUM`. NULL, duplicate bags and empty inputs are handled in this fragment. SQLGlot parses and checks the guarded IR; Z3 searches; independent DuckDB execution accepts or rejects the serialized candidate. Unsupported joins, filters, windows, UDFs, approximate arithmetic, other dialects and data-changing SQL fail closed. See [semantics](docs/semantics.md), [limitations](docs/limitations.md), and [architecture](docs/architecture.md).
+
+Statuses and exit codes: `COUNTEREXAMPLE_FOUND` 0; `BOUNDED_NO_COUNTEREXAMPLE` 3; `INCONCLUSIVE` timeout 4 or other UNKNOWN 8 (distinguished by `reason_code`); `UNSUPPORTED` 5; malformed SQL or other `INVALID_INPUT` 6; `INVALID_CANDIDATE` 7. `PROVEN_WITHIN_FRAGMENT` is reserved and is never emitted by this slice. The JSON result uses `schema_version: 1`.
+
+Run the tests and reproduce a local research manifest:
+
+```sh
+.venv/bin/python -m pip install '.[dev]'
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy src
+.venv/bin/pytest -q
+.venv/bin/pip-audit --local --progress-spinner off
+PYTHONPATH=src .venv/bin/python research/benchmarks/run_phase1.py examples/no_undo/daily_distinct.json --run-dir research/runs/local/my-run
+```
+
+The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. A single smoke run is not a benchmark or performance claim. [Research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the open evaluation questions. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
 
 ## Project stage
 
-The current step is to document the initial semantics and contribution/research workflow. No claim is made that this repository can yet find or prove a data pipeline defect.
-
-Research directions and software contributions will be evaluated independently; publication and GitHub popularity are not guaranteed.
+Phase 0 research framing and this Phase 1 NoUndo slice are the current scope. Doppelgänger, Proof2Test, TimeProof, ChangeProof, RepairProof, ResourceProof, dbt and cloud adapters remain planned research directions. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).

@@ -1,0 +1,5 @@
+# Roadmap and gate boundaries
+
+Phase 0: semantics, related work, research question and baseline feasibility. Phase 1: this limited NoUndo pair-world CLI and independently replayed witness. Phase 2 requires fresh authorization for broader property, mutation, differential and benchmark hardening. Later NoUndo SQL expansion, Doppelgänger, Proof2Test, TimeProof, ChangeProof, RepairProof, ResourceProof and provider adapters are research plans only. No placeholder implementation is exposed for them.
+
+Before claiming a scoped theorem, we need a written proof and checked premises. Before claiming a research contribution, we need fair runnable competitor obligations, matched benchmark methods and reviewed negative results. Papers 1–4 and software/demo submissions remain `NOT_READY` until their individual evidence gates pass. A working demo is useful on its own, independent of novelty or publication.
