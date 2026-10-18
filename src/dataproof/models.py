@@ -201,15 +201,33 @@ def parse_spec(raw: Any, source: Path | None = None) -> Spec:
     )
 
 
-def load_spec(path: Path) -> Spec:
+def load_raw_spec(path: Path) -> Any:
     if path.stat().st_size > 64_000:
         raise SpecError("spec exceeds 64 KiB")
     content = path.read_text(encoding="utf-8")
     try:
-        raw = json.loads(content) if path.suffix.lower() == ".json" else yaml.safe_load(content)
+        return json.loads(content) if path.suffix.lower() == ".json" else yaml.safe_load(content)
     except (json.JSONDecodeError, yaml.YAMLError) as exc:
         raise SpecError(f"cannot parse spec: {exc}") from exc
-    return parse_spec(raw, path)
+
+
+def output_dir_hint(path: Path) -> Path | None:
+    """Find an output path without accepting an otherwise invalid specification."""
+    try:
+        raw = load_raw_spec(path)
+    except (OSError, SpecError, UnicodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    value = raw.get("output_dir", "artifacts/no_undo")
+    if not isinstance(value, str) or not value:
+        return None
+    directory = Path(value)
+    return directory if directory.is_absolute() else (path.parent / directory).resolve()
+
+
+def load_spec(path: Path) -> Spec:
+    return parse_spec(load_raw_spec(path), path)
 
 
 def legal_world(spec: Spec, rows: tuple[Row, ...]) -> bool:

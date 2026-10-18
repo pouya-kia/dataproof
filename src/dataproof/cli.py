@@ -13,7 +13,7 @@ from typing import Any
 
 from dataproof.artifacts import ArtifactConflict, finish, prepare
 from dataproof.ir import Query
-from dataproof.models import Spec, SpecError, UnsupportedError, load_spec
+from dataproof.models import Spec, SpecError, UnsupportedError, load_spec, output_dir_hint
 from dataproof.parser import parse_query
 from dataproof.replay import validate, validate_serialized
 from dataproof.report import result_data, sha256_file, write_result, write_witness
@@ -41,14 +41,16 @@ def check(path: Path, output: Path | None, machine: bool) -> int:
             spec = replace(spec, output_dir=output)
     except UnsupportedError as exc:
         result = {"status": "UNSUPPORTED", "reason": str(exc)}
-        if output is not None:
-            _write_input_failure(output, result)
+        target = output or output_dir_hint(path)
+        if target is not None:
+            _write_input_failure(target, result)
         _emit(result, machine)
         return EXIT_CODES["UNSUPPORTED"]
     except (SpecError, OSError, ValueError) as exc:
         result = {"status": "INVALID_INPUT", "reason": str(exc)}
-        if output is not None:
-            _write_input_failure(output, result)
+        target = output or output_dir_hint(path)
+        if target is not None:
+            _write_input_failure(target, result)
         _emit(result, machine)
         return EXIT_CODES["INVALID_INPUT"]
 

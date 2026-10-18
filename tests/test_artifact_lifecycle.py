@@ -105,6 +105,23 @@ def test_invalid_input_with_explicit_output_clears_owned_evidence(
     assert check(path, None, False) == 0
 
 
+def test_invalid_schema_with_embedded_output_clears_owned_evidence(
+    base_spec: dict[str, Any], tmp_path: Path
+) -> None:
+    raw = deepcopy(base_spec)
+    output = tmp_path / "out"
+    raw["output_dir"] = str(output)
+    path = tmp_path / "spec.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    assert check(path, None, False) == 0
+    raw["max_rows"] = "bad"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    assert check(path, None, False) == EXIT_CODES["INVALID_INPUT"]
+    assert json.loads((output / "result.json").read_text())["status"] == "INVALID_INPUT"
+    assert not (output / "witness.json").exists()
+    assert not (output / "replay.sql").exists()
+
+
 @pytest.mark.parametrize("view", ["SELECT ) FROM orders", "DELETE FROM orders"])
 def test_bad_sql_with_embedded_output_clears_owned_evidence(
     base_spec: dict[str, Any], tmp_path: Path, view: str
