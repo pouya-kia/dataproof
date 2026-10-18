@@ -52,6 +52,19 @@ Doppelgänger is a separate, one-dataset check. The example explicitly declares 
 
 The admitted witness is one row with `amount = -1`; DuckDB independently checks the source assertions and the generated SQL ends in `REPLAY_OK`. A [versioned synthetic witness](examples/doppelganger/evidence/witness.json) and [replay SQL](examples/doppelganger/evidence/replay.sql) are included. The rationale is supplied by the user, not inferred by DataProof. See the [Doppelgänger contract and acceptance matrix](docs/doppelganger.md). A bounded miss (`BOUNDED_NO_BLIND_SPOT`, exit 3) is not proof of test adequacy; `INCONSISTENT_TESTS` (exit 9) means the declared tests have no legal passing dataset in this finite scope. SQL UNKNOWN is neither a passing test nor a confirmed invariant failure. Unsupported SQL and failed replay never produce a successful finding.
 
+## Export a durable regression test
+
+Proof2Test turns a replay-validated Doppelgänger witness and a **separately declared** expected target output into an executable pytest regression. This synthetic example declares that a target model clamps a negative amount to zero; DataProof does not infer that policy from the witness.
+
+```sh
+.venv/bin/python -m pip install '.[dev]'
+.venv/bin/dataproof proof2test export examples/doppelganger/evidence/witness.json --target examples/proof2test/clamp_amount.contract.json --format pytest --output artifacts/proof2test-demo
+DATAPROOF_TARGET_SQL=examples/proof2test/defective.sql .venv/bin/pytest -q artifacts/proof2test-demo
+DATAPROOF_TARGET_SQL=examples/proof2test/corrected.sql .venv/bin/pytest -q artifacts/proof2test-demo
+```
+
+The first generated-test run fails because the defective model emits `-1` instead of the declared `0`; the second passes. A narrow dbt Core unit-test YAML adapter is available with `--format dbt` for one local one-`ref` SQL model and nonempty, non-NULL INTEGER fixtures. It was run against dbt Core 1.10.23 + dbt-duckdb 1.10.0; arbitrary dbt projects are not supported. See the [versioned contract, commands, exact limitations and acceptance matrix](docs/proof2test.md). NoUndo test export remains unsupported because a pair-world determinacy witness is not a single-model output oracle.
+
 ## Scope and evidence
 
 The admitted fragment is a single synthetic table with finite `INTEGER`/`DATE` domains, at most three rows per world, one grouped aggregate view and one scalar aggregate metric. Aggregates are `COUNT(*)`, `COUNT(column)`, `COUNT(DISTINCT column)`, exact integer `SUM`, and direct integer `MIN`/`MAX`. Each query may have one guarded row filter: integer-column equality to a signed integer literal, `IS NULL`, or `IS NOT NULL`. NULL, duplicate bags and empty inputs are handled in this fragment. SQLGlot parses and checks the guarded IR; Z3 searches; independent DuckDB execution accepts or rejects the serialized candidate. Unsupported joins, compound filters, windows, UDFs, approximate arithmetic, other dialects and data-changing SQL fail closed. See [semantics](docs/semantics.md), [limitations](docs/limitations.md), and [architecture](docs/architecture.md).
@@ -71,10 +84,10 @@ PYTHONPATH=src .venv/bin/python research/benchmarks/run_phase1.py examples/no_un
 PYTHONPATH=src .venv/bin/python research/benchmarks/compare_tiny_reference.py examples/no_undo/daily_distinct.json --repeats 5 --output research/runs/local/paired.json
 ```
 
-The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. The [public evidence index](research/README.md) links the sanitized, commit-pinned Phase 2 and Phase 3 records, the benchmark protocol, and the limited claims they support. These records are not external performance comparisons. The [research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the evidence and open limitations. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
+The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. The [public evidence index](research/README.md) links sanitized, commit-pinned records through Phase 5, their protocols, and the limited claims they support. These records are not external performance comparisons. The [research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the evidence and open limitations. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
 
 ## Project stage
 
-Phases 0–3 established the NoUndo verifier; the Phase 4 Doppelgänger slice adds the explicitly declared test-blind-spot workflow above. Other analyses are not part of the installed tool. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
+Phases 0–3 established the NoUndo verifier; Phase 4 added Doppelgänger; Phase 5 adds the scoped Proof2Test export above. Other analyses are not part of the installed tool. See the [roadmap](docs/roadmap.md). Contributions and review are welcome under the [MIT license](LICENSE) and [contributor guide](CONTRIBUTING.md).
 
 For a short live walkthrough after installation, use the [offline demo cue sheet](docs/demo.md); it calls only the shipped CLI and does not rely on a staged recording.

@@ -1,0 +1,66 @@
+{
+  "dbt": {
+    "dbt_core": "1.10.23",
+    "dbt_duckdb": "1.10.0",
+    "elapsed_seconds": 3.660836290997395,
+    "exit_code": 0,
+    "status": "PASS"
+  },
+  "environment": {
+    "logical_cpus": 10,
+    "machine": "arm64",
+    "platform": "macOS-27.0.1-arm64-arm-64bit"
+  },
+  "export": {
+    "deterministic": true,
+    "elapsed_seconds": 0.12029416699806461,
+    "exit_code": 0,
+    "repeat_elapsed_seconds": 0.1193063329992583,
+    "status": "EXPORTED",
+    "test_sha256": "c4a42d6d0b40b58f841804c8414595b791c7d96df747da6d3deb7de50c6e32c5"
+  },
+  "generated_pytest": {
+    "corrected": {
+      "elapsed_seconds": 0.23262979100036318,
+      "exit_code": 0,
+      "passed_tests": 1
+    },
+    "defective": {
+      "elapsed_seconds": 0.2894711670014658,
+      "exit_code": 1,
+      "failure_reason": "target output bag differs"
+    },
+    "tampered_fixture": {
+      "elapsed_seconds": 0.2062622499979625,
+      "exit_code": 1,
+      "failure_reason": "fixture integrity mismatch"
+    }
+  },
+  "git_dirty_before_run": false,
+  "git_sha": "6c1fd5eb0c0fe2405755c702feaaa6c7f7557e73",
+  "inputs": {
+    "corrected_sql_sha256": "11a6d30a1353a8eaaec2baae204a2c5588e28d52a356deaf2512da5a40be5053",
+    "defective_sql_sha256": "cbed7e72e9c23bc9053f1c1a3745603184e67ae9df0d37316dd9b9ea801ee70c",
+    "spec_sha256": "cf5aa0d314018bdfe755a8d88b93368ac4f8e9e6abe49e159159471fe0c0ae6c",
+    "target_contract_sha256": "03d87c124cc16b176b57c5cc5abd981008bdad145ff6ccb767e181c343c738f1"
+  },
+  "measurement_scope": "One synthetic fixture and sequential local executions; timings are not comparative performance evidence.",
+  "record_kind": "proof2test_synthetic_round_trip",
+  "schema_version": 1,
+  "timestamp_utc": "2026-10-18T10:46:35.840725+00:00",
+  "versions": {
+    "dataproof": "0.1.0a1",
+    "duckdb": "1.5.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.11.16",
+    "sqlglot": "29.0.1",
+    "z3": "5.3.1"
+  },
+  "witness": {
+    "check_seconds": 0.16724166700078058,
+    "replay_seconds": 0.11664224999913131,
+    "serialized_replay_valid": true,
+    "sha256": "e1efa0fa742a52d7d0f45986c303bd6be51e1795b4a04759b4c5f5198547d7ae",
+    "status": "BLIND_SPOT_FOUND"
+  }
+}
