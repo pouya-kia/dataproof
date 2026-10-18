@@ -11,7 +11,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from dataproof.models import SpecError, UnsupportedError, load_spec
+from dataproof.ir import Query
+from dataproof.models import Spec, SpecError, UnsupportedError, load_spec
 from dataproof.parser import parse_query
 from dataproof.replay import validate, validate_serialized
 from dataproof.report import result_data, sha256_file, write_result, write_witness
@@ -48,20 +49,53 @@ def check(path: Path, output: Path | None, machine: bool) -> int:
         _emit(result, machine)
         return EXIT_CODES["INVALID_INPUT"]
 
+    try:
+        return _check_backend(spec, path, view, metric, machine)
+    except Exception as exc:
+        # An unexpected solver, DuckDB, filesystem, or serialization failure
+        # cannot be promoted to a validated witness or a bounded UNSAT result.
+        result = result_data(
+            spec, "INCONCLUSIVE", f"backend error: {type(exc).__name__}", sha256_file(path)
+        )
+        result["reason_code"] = "BACKEND_ERROR"
+        write_result(spec, result)
+        _emit(result, machine)
+        return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
+
+
+def _check_backend(spec: Spec, path: Path, view: Query, metric: Query, machine: bool) -> int:
+
     found = search(spec, view, metric)
     result = result_data(spec, found.status, found.reason, sha256_file(path))
     if found.worlds is None:
+        if found.status not in {"BOUNDED_NO_COUNTEREXAMPLE", "INCONCLUSIVE"}:
+            result["status"] = "INCONCLUSIVE"
+            result["reason"] = "solver returned inconsistent status without worlds"
+            result["reason_code"] = "SOLVER_ERROR"
+            write_result(spec, result)
+            _emit(result, machine)
+            return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
         result["result_path"] = str(spec.output_dir / "result.json")
         if found.status == "INCONCLUSIVE":
             reason = (found.reason or "").lower()
-            result["reason_code"] = (
+            result["reason_code"] = found.reason_code or (
                 "TIMEOUT" if "timeout" in reason or "canceled" in reason else "UNKNOWN"
             )
         write_result(spec, result)
         _emit(result, machine)
-        if found.status == "INCONCLUSIVE" and result["reason_code"] == "UNKNOWN":
+        if found.status == "INCONCLUSIVE" and result["reason_code"] not in {
+            "TIMEOUT",
+            "MEMORY_LIMIT",
+        }:
             return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
         return EXIT_CODES[found.status]
+    if found.status != "CANDIDATE":
+        result["status"] = "INCONCLUSIVE"
+        result["reason"] = "solver returned inconsistent status with worlds"
+        result["reason_code"] = "SOLVER_ERROR"
+        write_result(spec, result)
+        _emit(result, machine)
+        return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
     left, right = found.worlds
     checked = validate(spec, left, right)
     if not checked.valid:
@@ -111,6 +145,16 @@ def replay(path: Path, machine: bool) -> int:
     except (OSError, ValueError, KeyError, TypeError) as exc:
         _emit({"status": "INVALID_INPUT", "reason": str(exc)}, machine)
         return EXIT_CODES["INVALID_INPUT"]
+    except Exception as exc:
+        _emit(
+            {
+                "status": "INCONCLUSIVE",
+                "reason": f"backend error: {type(exc).__name__}",
+                "reason_code": "BACKEND_ERROR",
+            },
+            machine,
+        )
+        return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
     status = "COUNTEREXAMPLE_FOUND" if result.valid else "INVALID_CANDIDATE"
     _emit({"status": status, "reason": result.reason, "metric_values": result.metrics}, machine)
     return EXIT_CODES[status]

@@ -43,7 +43,7 @@ Both currently return `BOUNDED_NO_COUNTEREXAMPLE` (exit code 3). The first forbi
 
 The admitted fragment is a single synthetic table with finite `INTEGER`/`DATE` domains, at most three rows per world, one daily grouped aggregate view and one scalar aggregate metric. Aggregates are `COUNT(*)`, `COUNT(column)`, `COUNT(DISTINCT column)` and exact integer `SUM`. NULL, duplicate bags and empty inputs are handled in this fragment. SQLGlot parses and checks the guarded IR; Z3 searches; independent DuckDB execution accepts or rejects the serialized candidate. Unsupported joins, filters, windows, UDFs, approximate arithmetic, other dialects and data-changing SQL fail closed. See [semantics](docs/semantics.md), [limitations](docs/limitations.md), and [architecture](docs/architecture.md).
 
-Statuses and exit codes: `COUNTEREXAMPLE_FOUND` 0; `BOUNDED_NO_COUNTEREXAMPLE` 3; `INCONCLUSIVE` timeout 4 or other UNKNOWN 8 (distinguished by `reason_code`); `UNSUPPORTED` 5; malformed SQL or other `INVALID_INPUT` 6; `INVALID_CANDIDATE` 7. `PROVEN_WITHIN_FRAGMENT` is reserved and is never emitted by this slice. The JSON result uses `schema_version: 1`.
+Statuses and exit codes: `COUNTEREXAMPLE_FOUND` 0; `BOUNDED_NO_COUNTEREXAMPLE` 3; `INCONCLUSIVE` timeout or solver-memory limit 4, other solver/backend errors or UNKNOWN 8 (distinguished by `reason_code`); `UNSUPPORTED` 5; malformed SQL or other `INVALID_INPUT` 6; `INVALID_CANDIDATE` 7. `PROVEN_WITHIN_FRAGMENT` is reserved and is never emitted by this slice. The JSON result uses `schema_version: 1`.
 
 Run the tests and reproduce a local research manifest:
 
