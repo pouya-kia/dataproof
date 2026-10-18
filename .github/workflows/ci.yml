@@ -37,3 +37,5 @@ jobs:
           clean-venv/bin/python -m pip install dist/*.whl
           clean-venv/bin/dataproof check examples/no_undo/daily_distinct.json --output artifacts/ci
           clean-venv/bin/dataproof replay artifacts/ci/witness.json
+          clean-venv/bin/dataproof doppelganger check examples/doppelganger/nonnegative_amount.json --output artifacts/ci-doppel
+          clean-venv/bin/dataproof doppelganger replay artifacts/ci-doppel/witness.json
