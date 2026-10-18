@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -36,3 +37,15 @@ def test_local_run_records_code_and_verified_replay(
     assert (
         json.loads((tmp_path / "run" / "manifest.json").read_text())["git_sha"] == record["git_sha"]
     )
+
+
+def test_published_record_is_scoped_and_input_pinned() -> None:
+    record = json.loads(Path("research/runs/published/phase4-e584070.json").read_text())
+    source = Path(record["input_path"])
+    assert record["git_dirty_before_run"] is False
+    assert record["input_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    assert len(record["runs"]) == record["configuration"]["repeats"] == 5
+    assert all(run["solver_status"] == run["reference_status"] for run in record["runs"])
+    assert all(run["row_minimal_verified"] for run in record["runs"])
+    assert all(run["random"]["found"] for run in record["runs"])
+    assert "/Users/" not in json.dumps(record)
