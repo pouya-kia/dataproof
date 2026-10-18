@@ -1,7 +1,7 @@
 # Current limitations
 
 - One table, one grouped retained view, one scalar aggregate metric, at most three rows per world and at most four finite values per column. A result applies only to those explicit bounds and values.
-- One direct grouping column. No `WHERE`, joins, subqueries, `ORDER BY`, windows, UDFs, arithmetic expressions, multiple views, foreign keys, strings, decimals, floating point or timestamps. SQL must use DuckDB semantics.
+- One direct grouping column and at most one guarded row predicate (`INTEGER =` signed integer literal, `IS NULL`, or `IS NOT NULL`) per query. No compound or other `WHERE` conditions, joins, subqueries, `ORDER BY`, windows, UDFs, arithmetic expressions, multiple views, foreign keys, strings, decimals, floating point or timestamps. SQL must use DuckDB semantics.
 - The current optimizer minimizes total synthetic source rows within the finite model and chooses a stable lexicographic witness. This is **not** a globally minimal SQL counterexample or a minimum among unrestricted databases.
 - `BOUNDED_NO_COUNTEREXAMPLE` never means universal determinacy. SUM roll-up is not a theorem here; the included daily SUM case is checked only in its finite domain.
 - No PostgreSQL or other engine differential claim, no dbt integration, no production data access, no cloud adapter, no profiler, and no performance benchmark comparison.

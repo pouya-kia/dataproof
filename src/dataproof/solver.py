@@ -67,15 +67,39 @@ def _world(solver: z3.Optimize, spec: Spec, label: str) -> _World:
     return _World(active, cells)
 
 
-def _scope(spec: Spec, world: _World, group: tuple[str, Value] | None) -> list[ZBool]:
+def _scope(spec: Spec, world: _World, query: Query, group: tuple[str, Value] | None) -> list[ZBool]:
+    mask = world.active
+    if query.predicate is not None:
+        predicate = query.predicate
+        index = spec.names.index(predicate.column)
+        domain = spec.columns[index].domain
+        if predicate.kind == "eq":
+            condition = (
+                [row[index] == domain.index(predicate.value) for row in world.cells]
+                if predicate.value in domain
+                else [z3.BoolVal(False) for _ in world.cells]
+            )
+        elif predicate.kind == "is_null":
+            condition = (
+                [row[index] == domain.index(None) for row in world.cells]
+                if None in domain
+                else [z3.BoolVal(False) for _ in world.cells]
+            )
+        elif predicate.kind == "is_not_null":
+            condition = (
+                [row[index] != domain.index(None) for row in world.cells]
+                if None in domain
+                else [z3.BoolVal(True) for _ in world.cells]
+            )
+        else:
+            raise AssertionError(f"unexpected IR predicate: {predicate.kind}")
+        mask = [z3.And(on, pred) for on, pred in zip(mask, condition, strict=True)]
     if group is None:
-        return world.active
+        return mask
     name, value = group
     index = spec.names.index(name)
     code = spec.columns[index].domain.index(value)
-    return [
-        z3.And(on, row[index] == code) for on, row in zip(world.active, world.cells, strict=True)
-    ]
+    return [z3.And(on, row[index] == code) for on, row in zip(mask, world.cells, strict=True)]
 
 
 def _aggregate(spec: Spec, world: _World, mask: list[ZBool], agg: Aggregate) -> ZValue:
@@ -156,8 +180,8 @@ def _search(spec: Spec, view: Query, metric: Query) -> SearchResult:
     group_col = spec.column(view.group_by)
     for key in group_col.domain:
         group = (view.group_by, key)
-        lmask = _scope(spec, left, group)
-        rmask = _scope(spec, right, group)
+        lmask = _scope(spec, left, view, group)
+        rmask = _scope(spec, right, view, group)
         lhas, rhas = _ors(lmask), _ors(rmask)
         solver.add(lhas == rhas)
         for proj in view.projections:
@@ -169,8 +193,8 @@ def _search(spec: Spec, view: Query, metric: Query) -> SearchResult:
     assert metric_agg is not None
     solver.add(
         _different(
-            _aggregate(spec, left, _scope(spec, left, None), metric_agg),
-            _aggregate(spec, right, _scope(spec, right, None), metric_agg),
+            _aggregate(spec, left, _scope(spec, left, metric, None), metric_agg),
+            _aggregate(spec, right, _scope(spec, right, metric, None), metric_agg),
         )
     )
     # Complete lexicographic objectives give a stable canonical witness for a
