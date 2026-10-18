@@ -11,8 +11,9 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from dataproof.artifacts import ArtifactConflict, finish, prepare
 from dataproof.ir import Query
-from dataproof.models import Spec, SpecError, UnsupportedError, load_spec
+from dataproof.models import Spec, SpecError, UnsupportedError, load_spec, output_dir_hint
 from dataproof.parser import parse_query
 from dataproof.replay import validate, validate_serialized
 from dataproof.report import result_data, sha256_file, write_result, write_witness
@@ -38,29 +39,63 @@ def check(path: Path, output: Path | None, machine: bool) -> int:
         spec = load_spec(path)
         if output is not None:
             spec = replace(spec, output_dir=output)
-        view = parse_query(spec.views[0], spec, metric=False)
-        metric = parse_query(spec.metric, spec, metric=True)
     except UnsupportedError as exc:
         result = {"status": "UNSUPPORTED", "reason": str(exc)}
+        target = output or output_dir_hint(path)
+        if target is not None:
+            _write_input_failure(target, result)
         _emit(result, machine)
         return EXIT_CODES["UNSUPPORTED"]
     except (SpecError, OSError, ValueError) as exc:
         result = {"status": "INVALID_INPUT", "reason": str(exc)}
+        target = output or output_dir_hint(path)
+        if target is not None:
+            _write_input_failure(target, result)
         _emit(result, machine)
         return EXIT_CODES["INVALID_INPUT"]
 
     try:
-        return _check_backend(spec, path, view, metric, machine)
-    except Exception as exc:
-        # An unexpected solver, DuckDB, filesystem, or serialization failure
-        # cannot be promoted to a validated witness or a bounded UNSAT result.
-        result = result_data(
-            spec, "INCONCLUSIVE", f"backend error: {type(exc).__name__}", sha256_file(path)
-        )
-        result["reason_code"] = "BACKEND_ERROR"
-        write_result(spec, result)
+        prepare(spec.output_dir)
+    except (ArtifactConflict, OSError) as exc:
+        result = {"status": "INVALID_INPUT", "reason": str(exc)}
         _emit(result, machine)
-        return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
+        return EXIT_CODES["INVALID_INPUT"]
+    try:
+        try:
+            view = parse_query(spec.views[0], spec, metric=False)
+            metric = parse_query(spec.metric, spec, metric=True)
+        except (UnsupportedError, SpecError, ValueError) as exc:
+            status = "UNSUPPORTED" if isinstance(exc, UnsupportedError) else "INVALID_INPUT"
+            result = {"status": status, "reason": str(exc)}
+            write_result(spec, result)
+            _emit(result, machine)
+            return EXIT_CODES[status]
+        try:
+            return _check_backend(spec, path, view, metric, machine)
+        except Exception as exc:
+            # Unexpected backend failures never retain or publish a witness.
+            result = result_data(
+                spec, "INCONCLUSIVE", f"backend error: {type(exc).__name__}", sha256_file(path)
+            )
+            result["reason_code"] = "BACKEND_ERROR"
+            write_result(spec, result)
+            _emit(result, machine)
+            return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
+    finally:
+        finish(spec.output_dir)
+
+
+def _write_input_failure(output: Path, result: dict[str, Any]) -> None:
+    try:
+        prepare(output)
+        output.joinpath("result.json").write_text(
+            json.dumps({"schema_version": 1, **result}, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        finish(output)
+    except (ArtifactConflict, OSError):
+        # The requested directory is unsafe or unwritable; preserve its contents.
+        pass
 
 
 def _check_backend(spec: Spec, path: Path, view: Query, metric: Query, machine: bool) -> int:
