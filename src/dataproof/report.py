@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import shlex
 import sys
+import tempfile
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -20,9 +22,16 @@ from dataproof.replay import make_replay_sql, serialize_rows
 
 
 def _write(path: Path, data: Any) -> None:
-    path.write_text(
-        json.dumps(data, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
-    )
+    payload = json.dumps(data, indent=2, sort_keys=True, default=str) + "\n"
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", prefix=".dataproof-write-", dir=path.parent, delete=False
+    ) as stream:
+        staged = Path(stream.name)
+        stream.write(payload)
+    try:
+        os.replace(staged, path)
+    finally:
+        staged.unlink(missing_ok=True)
 
 
 def versions() -> dict[str, str]:

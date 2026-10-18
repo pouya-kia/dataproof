@@ -30,6 +30,8 @@ COUNTEREXAMPLE_FOUND
 
 The JSON reports both world tables, equal retained view rows, monthly metrics `1` and `2`, assumptions, bounds, seed, versions and a world hash. `replay.sql` can also run directly in DuckDB and ends with `REPLAY_OK`. The included [example specification](examples/no_undo/daily_distinct.json) and [versioned witness](examples/no_undo/evidence/witness.json) are entirely synthetic. `dataproof check ... --json` prints the machine-readable result.
 
+Repeated checks may use the same `--output` directory. DataProof records hashes of its own fixed-name artifacts in `.dataproof-owned.json`; before a new run it clears only unchanged, recorded files. A non-counterexample run leaves no `witness.json` or `replay.sql`, and unrelated files are preserved. If a reserved artifact name is unowned or modified, the check refuses that directory rather than deleting the file. For output directories created by earlier DataProof versions without the ownership record, choose a fresh directory and archive the old evidence separately. For a malformed specification whose embedded `output_dir` cannot be parsed, pass `--output` explicitly if the previous artifacts should be cleared; otherwise DataProof cannot safely infer which directory to touch. Do not run simultaneous checks against one output directory.
+
 Two counterchecks are included:
 
 ```sh
