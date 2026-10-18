@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dataproof"
 version = "0.1.0a1"
-description = "Bounded executable counterexamples for SQL view determinacy"
+description = "Bounded replayable checks for SQL view determinacy and test blind spots"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
