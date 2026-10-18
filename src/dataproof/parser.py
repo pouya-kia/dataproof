@@ -28,11 +28,13 @@ def _aggregate(node: exp.Expression, spec: Spec) -> Aggregate:
         if isinstance(arg, exp.Distinct) and len(arg.expressions) == 1:
             return Aggregate("count_distinct", _column(arg.expressions[0], spec))
         return Aggregate("count", _column(arg, spec))
-    if isinstance(node, exp.Sum) and node.this is not None:
+    if isinstance(node, (exp.Sum, exp.Min, exp.Max)) and node.this is not None:
+        if any(value for key, value in node.args.items() if key != "this"):
+            raise UnsupportedError("numeric aggregate has unsupported arguments")
         name = _column(node.this, spec)
         if spec.column(name).type != "INTEGER":
-            raise UnsupportedError("SUM requires an INTEGER column")
-        return Aggregate("sum", name)
+            raise UnsupportedError("numeric aggregate requires an INTEGER column")
+        return Aggregate(type(node).__name__.lower(), name)
     raise UnsupportedError(f"unsupported expression: {type(node).__name__}")
 
 
