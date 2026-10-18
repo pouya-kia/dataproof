@@ -16,6 +16,14 @@ class Projection:
 
 
 @dataclass(frozen=True)
+class Predicate:
+    kind: str
+    column: str
+    value: int | None = None
+
+
+@dataclass(frozen=True)
 class Query:
     group_by: str | None
     projections: tuple[Projection, ...]
+    predicate: Predicate | None = None

@@ -147,7 +147,7 @@ def test_nullable_group_and_input_reordering(base_spec: dict[str, object]) -> No
         "SELECT day, ROW_NUMBER() OVER (PARTITION BY day) AS n FROM orders GROUP BY day",
         "SELECT day, random() AS n FROM orders GROUP BY day",
         "SELECT day, COUNT(*) AS n FROM read_csv('secret.csv') GROUP BY day",
-        "SELECT day, COUNT(*) AS n FROM orders WHERE customer_id = 1 GROUP BY day",
+        "SELECT day, COUNT(*) AS n FROM orders WHERE customer_id > 1 GROUP BY day",
         "SELECT day, COUNT(*) AS n FROM orders GROUP BY day ORDER BY day",
         "SELECT day, COUNT(*) AS n FROM orders GROUP BY day; DROP TABLE orders",
     ],

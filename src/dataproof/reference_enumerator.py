@@ -33,6 +33,19 @@ def _agg(agg: Aggregate, rows: tuple[Row, ...], spec: Spec) -> int | None:
 
 
 def _evaluate(query: Query, rows: tuple[Row, ...], spec: Spec) -> tuple[tuple[Value, ...], ...]:
+    if query.predicate is not None:
+        predicate = query.predicate
+        index = spec.names.index(predicate.column)
+        if predicate.kind == "eq":
+            rows = tuple(
+                row for row in rows if row[index] is not None and row[index] == predicate.value
+            )
+        elif predicate.kind == "is_null":
+            rows = tuple(row for row in rows if row[index] is None)
+        elif predicate.kind == "is_not_null":
+            rows = tuple(row for row in rows if row[index] is not None)
+        else:
+            raise AssertionError(f"unexpected IR predicate: {predicate.kind}")
     if query.group_by is None:
         assert len(query.projections) == 1 and query.projections[0].aggregate is not None
         return ((_agg(query.projections[0].aggregate, rows, spec),),)

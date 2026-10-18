@@ -6,7 +6,7 @@ import sqlglot
 from sqlglot import exp
 from sqlglot.errors import ErrorLevel, ParseError
 
-from dataproof.ir import Aggregate, Projection, Query
+from dataproof.ir import Aggregate, Predicate, Projection, Query
 from dataproof.models import InvalidSqlError, Spec, UnsupportedError
 
 
@@ -36,6 +36,31 @@ def _aggregate(node: exp.Expression, spec: Spec) -> Aggregate:
     raise UnsupportedError(f"unsupported expression: {type(node).__name__}")
 
 
+def _predicate(node: exp.Expression, spec: Spec) -> Predicate:
+    if isinstance(node, exp.EQ):
+        name = _column(node.this, spec)
+        if spec.column(name).type != "INTEGER":
+            raise UnsupportedError("equality filter requires an INTEGER column")
+        rhs = node.expression
+        sign = 1
+        if isinstance(rhs, exp.Neg):
+            rhs = rhs.this
+            sign = -1
+        if not isinstance(rhs, exp.Literal) or not rhs.is_int:
+            raise UnsupportedError("equality filter requires an integer literal")
+        value = sign * int(rhs.this)
+        if not -(2**31) <= value < 2**31:
+            raise UnsupportedError("integer filter literal exceeds INTEGER range")
+        return Predicate("eq", name, value)
+    kind = "is_null"
+    if isinstance(node, exp.Not):
+        kind = "is_not_null"
+        node = node.this
+    if isinstance(node, exp.Is) and isinstance(node.expression, exp.Null):
+        return Predicate(kind, _column(node.this, spec))
+    raise UnsupportedError("unsupported WHERE predicate")
+
+
 def parse_query(sql: str, spec: Spec, *, metric: bool) -> Query:
     if len(sql) > 4096:
         raise UnsupportedError("SQL exceeds 4096 characters")
@@ -46,7 +71,7 @@ def parse_query(sql: str, spec: Spec, *, metric: bool) -> Query:
     if len(statements) != 1 or not isinstance(statements[0], exp.Select):
         raise UnsupportedError("exactly one SELECT statement is required")
     node = statements[0]
-    allowed_clauses = {"expressions", "from_", "group"}
+    allowed_clauses = {"expressions", "from_", "group", "where"}
     if any(value for key, value in node.args.items() if key not in allowed_clauses):
         raise UnsupportedError("unsupported SELECT clause")
     from_clause = node.args.get("from_")
@@ -55,6 +80,12 @@ def parse_query(sql: str, spec: Spec, *, metric: bool) -> Query:
     table = from_clause.this
     if table.name != spec.table or table.db or table.catalog or table.alias:
         raise UnsupportedError("query must read the declared local table")
+    where = node.args.get("where")
+    predicate = None
+    if where is not None:
+        if not isinstance(where, exp.Where) or where.this is None:
+            raise UnsupportedError("unsupported WHERE clause")
+        predicate = _predicate(where.this, spec)
     group = node.args.get("group")
     group_name: str | None = None
     if group is not None:
@@ -87,4 +118,4 @@ def parse_query(sql: str, spec: Spec, *, metric: bool) -> Query:
         or not any(p.aggregate is not None for p in projections)
     ):
         raise UnsupportedError("view needs its grouping column and an aggregate")
-    return Query(group_name, tuple(projections))
+    return Query(group_name, tuple(projections), predicate)
