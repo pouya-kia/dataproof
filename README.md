@@ -84,7 +84,7 @@ PYTHONPATH=src .venv/bin/python research/benchmarks/run_phase1.py examples/no_un
 PYTHONPATH=src .venv/bin/python research/benchmarks/compare_tiny_reference.py examples/no_undo/daily_distinct.json --repeats 5 --output research/runs/local/paired.json
 ```
 
-The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. The [public evidence index](research/README.md) links the sanitized, commit-pinned Phase 2 and Phase 3 records, the benchmark protocol, and the limited claims they support. These records are not external performance comparisons. The [research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the evidence and open limitations. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
+The run manifest records exact input hash, seed, versions, Git state, machine metadata, elapsed time, exit code and replay paths. The [public evidence index](research/README.md) links sanitized, commit-pinned records through Phase 5, their protocols, and the limited claims they support. These records are not external performance comparisons. The [research protocol](research/protocols/phase1.md), [claims ledger](research/claims_ledger.md), and [prior art](docs/prior-art.md) document the evidence and open limitations. VeriEQL and query-identifiability already address related verification or identifiability problems; DataProof's scientific originality remains unverified.
 
 ## Project stage
 
