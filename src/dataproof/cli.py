@@ -1,0 +1,134 @@
+"""Small offline command-line interface for NoUndo."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import tempfile
+from dataclasses import replace
+from pathlib import Path
+from typing import Any
+
+from dataproof.models import SpecError, UnsupportedError, load_spec
+from dataproof.parser import parse_query
+from dataproof.replay import validate, validate_serialized
+from dataproof.report import result_data, sha256_file, write_result, write_witness
+from dataproof.solver import search
+from dataproof.status import EXIT_CODES
+
+
+def _emit(result: dict[str, Any], machine: bool) -> None:
+    if machine:
+        print(json.dumps(result, indent=2, sort_keys=True, default=str))
+    else:
+        print(result["status"])
+        if result.get("reason"):
+            print(result["reason"])
+        if result.get("witness_path"):
+            print(f"witness: {result['witness_path']}")
+            print(f"replay SQL: {result['replay_sql_path']}")
+
+
+def check(path: Path, output: Path | None, machine: bool) -> int:
+    result: dict[str, Any]
+    try:
+        spec = load_spec(path)
+        if output is not None:
+            spec = replace(spec, output_dir=output)
+        view = parse_query(spec.views[0], spec, metric=False)
+        metric = parse_query(spec.metric, spec, metric=True)
+    except UnsupportedError as exc:
+        result = {"status": "UNSUPPORTED", "reason": str(exc)}
+        _emit(result, machine)
+        return EXIT_CODES["UNSUPPORTED"]
+    except (SpecError, OSError, ValueError) as exc:
+        result = {"status": "INVALID_INPUT", "reason": str(exc)}
+        _emit(result, machine)
+        return EXIT_CODES["INVALID_INPUT"]
+
+    found = search(spec, view, metric)
+    result = result_data(spec, found.status, found.reason, sha256_file(path))
+    if found.worlds is None:
+        result["result_path"] = str(spec.output_dir / "result.json")
+        if found.status == "INCONCLUSIVE":
+            reason = (found.reason or "").lower()
+            result["reason_code"] = (
+                "TIMEOUT" if "timeout" in reason or "canceled" in reason else "UNKNOWN"
+            )
+        write_result(spec, result)
+        _emit(result, machine)
+        if found.status == "INCONCLUSIVE" and result["reason_code"] == "UNKNOWN":
+            return EXIT_CODES["INCONCLUSIVE_UNKNOWN"]
+        return EXIT_CODES[found.status]
+    left, right = found.worlds
+    checked = validate(spec, left, right)
+    if not checked.valid:
+        result["status"] = "INVALID_CANDIDATE"
+        result["reason"] = checked.reason
+        write_result(spec, result)
+        _emit(result, machine)
+        return EXIT_CODES["INVALID_CANDIDATE"]
+    result["status"] = "COUNTEREXAMPLE_FOUND"
+    result["witness_path"] = str(spec.output_dir / "witness.json")
+    result["replay_sql_path"] = str(spec.output_dir / "replay.sql")
+    result["view_rows"] = [list(map(list, view_rows)) for view_rows in checked.views]
+    result["metric_values"] = list(checked.metrics)
+    spec.output_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="candidate-", dir=spec.output_dir) as staging:
+        staged = write_witness(spec, result, left, right, Path(staging))
+        serialized = validate_serialized(staged)
+        if not serialized.valid:
+            result["status"] = "INVALID_CANDIDATE"
+            result["reason"] = serialized.reason
+            result.pop("witness_path")
+            result.pop("replay_sql_path")
+            write_result(spec, result)
+            _emit(result, machine)
+            return EXIT_CODES["INVALID_CANDIDATE"]
+        os.replace(staged, spec.output_dir / "witness.json")
+        os.replace(Path(staging) / "replay.sql", spec.output_dir / "replay.sql")
+    final_validation = validate_serialized(spec.output_dir / "witness.json")
+    if not final_validation.valid:
+        result["status"] = "INVALID_CANDIDATE"
+        result["reason"] = final_validation.reason
+        result.pop("witness_path")
+        result.pop("replay_sql_path")
+        os.replace(spec.output_dir / "witness.json", spec.output_dir / "invalid_candidate.json")
+        os.replace(spec.output_dir / "replay.sql", spec.output_dir / "invalid_candidate.sql")
+        write_result(spec, result)
+        _emit(result, machine)
+        return EXIT_CODES["INVALID_CANDIDATE"]
+    write_result(spec, result)
+    _emit(result, machine)
+    return EXIT_CODES["COUNTEREXAMPLE_FOUND"]
+
+
+def replay(path: Path, machine: bool) -> int:
+    try:
+        result = validate_serialized(path)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        _emit({"status": "INVALID_INPUT", "reason": str(exc)}, machine)
+        return EXIT_CODES["INVALID_INPUT"]
+    status = "COUNTEREXAMPLE_FOUND" if result.valid else "INVALID_CANDIDATE"
+    _emit({"status": status, "reason": result.reason, "metric_values": result.metrics}, machine)
+    return EXIT_CODES[status]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="dataproof")
+    sub = parser.add_subparsers(dest="command", required=True)
+    check_parser = sub.add_parser("check", help="search and independently replay NoUndo")
+    check_parser.add_argument("spec", type=Path)
+    check_parser.add_argument("--output", type=Path)
+    check_parser.add_argument("--json", action="store_true")
+    replay_parser = sub.add_parser("replay", help="validate serialized witness and replay.sql")
+    replay_parser.add_argument("witness", type=Path)
+    replay_parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
+    if args.command == "check":
+        code = check(args.spec, args.output, args.json)
+    else:
+        code = replay(args.witness, args.json)
+    sys.exit(code)

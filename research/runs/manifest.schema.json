@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataProof Phase 1 run manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "timestamp_utc", "git_sha", "git_dirty", "input_sha256",
+    "input_size_bytes", "seed", "max_rows", "timeout_ms", "max_memory_mb", "versions", "environment",
+    "command", "exit_code", "status", "elapsed_seconds", "stdout_path", "stderr_path",
+    "artifact_paths"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "git_sha": {"type": ["string", "null"]},
+    "git_dirty": {"type": ["boolean", "null"]},
+    "input_sha256": {"type": "string"},
+    "input_size_bytes": {"type": "integer", "minimum": 0},
+    "seed": {"type": "integer"},
+    "max_rows": {"type": "integer"},
+    "timeout_ms": {"type": "integer"},
+    "max_memory_mb": {"type": "integer"},
+    "versions": {"type": "object"},
+    "environment": {"type": "object"},
+    "command": {"type": "array", "items": {"type": "string"}},
+    "exit_code": {"type": "integer"},
+    "status": {"type": "string"},
+    "elapsed_seconds": {"type": "number", "minimum": 0},
+    "stdout_path": {"type": "string"},
+    "stderr_path": {"type": "string"},
+    "artifact_paths": {"type": "object"}
+  }
+}

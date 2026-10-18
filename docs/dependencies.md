@@ -1,0 +1,5 @@
+# Dependency and license review
+
+Reviewed on 2026-10-18 for the Phase 1 direct runtime dependencies pinned in `pyproject.toml`. [DuckDB](https://github.com/duckdb/duckdb/blob/main/LICENSE) 1.5.6, [SQLGlot](https://github.com/tobymao/sqlglot/blob/main/LICENSE) 29.0.1, [Z3](https://github.com/Z3Prover/z3/blob/master/LICENSE.txt) via `z3-solver` 5.3.1.0, and [PyYAML](https://github.com/yaml/pyyaml/blob/main/LICENSE) 6.0.3 are MIT-licensed according to their project source or installed metadata. DuckDB's installed wheel metadata did not expose a license field, so the upstream license file was checked directly. No competitor implementation code was copied.
+
+`pip-audit --local --progress-spinner off` reported no known vulnerabilities in the tested environment. It skipped the unpublished local `dataproof` package, as expected. This is a point-in-time vulnerability database check, not a guarantee that packages are secure. Each dependency update requires a fresh license/security review, full tests and a reproducibility record. The installed runtime remains offline after installation; this audit is a development/CI action.
