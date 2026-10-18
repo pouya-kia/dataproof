@@ -50,7 +50,7 @@ Doppelgänger is a separate, one-dataset check. The example explicitly declares 
 .venv/bin/dataproof doppelganger replay artifacts/doppel-demo/witness.json
 ```
 
-The admitted witness is one row with `amount = -1`; DuckDB independently checks the source assertions and the generated SQL ends in `REPLAY_OK`. The rationale is supplied by the user, not inferred by DataProof. See the [Doppelgänger contract and acceptance matrix](docs/doppelganger.md). A bounded miss (`BOUNDED_NO_BLIND_SPOT`, exit 3) is not proof of test adequacy; `INCONSISTENT_TESTS` (exit 9) means the declared tests have no legal passing dataset in this finite scope. SQL UNKNOWN is neither a passing test nor a confirmed invariant failure. Unsupported SQL and failed replay never produce a successful finding.
+The admitted witness is one row with `amount = -1`; DuckDB independently checks the source assertions and the generated SQL ends in `REPLAY_OK`. A [versioned synthetic witness](examples/doppelganger/evidence/witness.json) and [replay SQL](examples/doppelganger/evidence/replay.sql) are included. The rationale is supplied by the user, not inferred by DataProof. See the [Doppelgänger contract and acceptance matrix](docs/doppelganger.md). A bounded miss (`BOUNDED_NO_BLIND_SPOT`, exit 3) is not proof of test adequacy; `INCONSISTENT_TESTS` (exit 9) means the declared tests have no legal passing dataset in this finite scope. SQL UNKNOWN is neither a passing test nor a confirmed invariant failure. Unsupported SQL and failed replay never produce a successful finding.
 
 ## Scope and evidence
 

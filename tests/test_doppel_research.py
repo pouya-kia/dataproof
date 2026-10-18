@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from dataproof.doppel_model import load_doppel_spec
+from dataproof.doppel_replay import validate_serialized
 from research.benchmarks.run_doppelganger import random_baseline, run
 
 
@@ -49,3 +50,12 @@ def test_published_record_is_scoped_and_input_pinned() -> None:
     assert all(run["row_minimal_verified"] for run in record["runs"])
     assert all(run["random"]["found"] for run in record["runs"])
     assert "/Users/" not in json.dumps(record)
+
+
+def test_versioned_golden_witness_replays_the_recorded_rows() -> None:
+    evidence = Path("examples/doppelganger/evidence/witness.json")
+    record = json.loads(Path("research/runs/published/phase4-e584070.json").read_text())
+    witness = json.loads(evidence.read_text())
+    assert validate_serialized(evidence).valid
+    assert witness["rows"] == [[-1]]
+    assert witness["rows_sha256"] == record["cli"]["rows_sha256"]
