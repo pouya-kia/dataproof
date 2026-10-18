@@ -1,4 +1,4 @@
-# Offline NoUndo demo cue sheet
+# Offline DataProof demo cue sheet
 
 This is a screen-recording cue sheet, not a claim that setup or installation takes a measured amount of time. Install once as shown in the README, then record the following actual local terminal commands without editing their output:
 
@@ -9,3 +9,12 @@ This is a screen-recording cue sheet, not a claim that setup or installation tak
 ```
 
 Show the two monthly values and equal retained daily rows in `artifacts/demo/witness.json`, then show the final `REPLAY_OK` assertion in `artifacts/demo/replay.sql` using a local DuckDB execution. The CLI's replay command already executes the serialized SQL independently. State the precise interpretation: the retained daily view fails to determine monthly distinct customers under this finite schema; no backup deletion or universal determinacy result is implied. Do not present a recording until the commands and unaltered logs have been rerun on the recording machine.
+
+For the distinct Doppelgänger obligation, use a different output directory:
+
+```sh
+.venv/bin/dataproof doppelganger check examples/doppelganger/nonnegative_amount.json --output artifacts/doppel-demo
+.venv/bin/dataproof doppelganger replay artifacts/doppel-demo/witness.json
+```
+
+Show the one synthetic `amount = -1` row, the declared nonempty test evaluating TRUE, and the separately declared no-negative-amount invariant evaluating FALSE. The invariant's rationale is user supplied; DataProof does not establish that any real organization's business rule is true. The result is finite-bound evidence of a test blind spot, not a universal adequacy verdict.

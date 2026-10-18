@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "record_kind": "sanitized_clean_doppelganger_run",
+  "timestamp_utc": "2026-10-18T09:51:01.004212+00:00",
+  "git_sha": "e584070e5d7dda257afe33c1fed44bc5f7703af3",
+  "git_dirty_before_run": false,
+  "input_path": "examples/doppelganger/nonnegative_amount.json",
+  "input_sha256": "cf5aa0d314018bdfe755a8d88b93368ac4f8e9e6abe49e159159471fe0c0ae6c",
+  "configuration": {"max_memory_mb": 256, "max_rows": 2, "random_attempt_cap": 20, "repeats": 5, "seed": 0, "timeout_ms": 10000},
+  "versions": {"dataproof": "0.1.0a1", "duckdb": "1.5.6", "platform": "macOS-27.0.1-arm64-arm-64bit", "python": "3.11.16", "sqlglot": "29.0.1", "z3": "5.3.1"},
+  "environment": {"logical_cpus": 10, "machine": "arm64", "platform": "macOS-27.0.1-arm64-arm-64bit"},
+  "resource": {"parent_peak_rss_raw": 98615296, "parent_system_cpu_seconds": 0.040999, "parent_user_cpu_seconds": 0.27487, "peak_rss_unit": "bytes", "scope": "cumulative parent process, not a per-backend measurement"},
+  "runs": [
+    {"solver_status": "BLIND_SPOT_FOUND", "solver_seconds": 0.003986666000855621, "solver_rows": 1, "row_minimal_verified": true, "reference_status": "BLIND_SPOT_FOUND", "reference_seconds": 0.0392392909998307, "reference_worlds": 10, "reference_test_passing_worlds": 9, "random": {"seed": 0, "attempt_cap": 20, "draws": 8, "legal_draws": 8, "test_passing_draws": 6, "found": true, "elapsed_seconds": 0.02847512500011362}},
+    {"solver_status": "BLIND_SPOT_FOUND", "solver_seconds": 0.0020486670000536833, "solver_rows": 1, "row_minimal_verified": true, "reference_status": "BLIND_SPOT_FOUND", "reference_seconds": 0.03501299999879848, "reference_worlds": 10, "reference_test_passing_worlds": 9, "random": {"seed": 1, "attempt_cap": 20, "draws": 2, "legal_draws": 2, "test_passing_draws": 1, "found": true, "elapsed_seconds": 0.006868915999802994}},
+    {"solver_status": "BLIND_SPOT_FOUND", "solver_seconds": 0.0018814579998434056, "solver_rows": 1, "row_minimal_verified": true, "reference_status": "BLIND_SPOT_FOUND", "reference_seconds": 0.034632916998816654, "reference_worlds": 10, "reference_test_passing_worlds": 9, "random": {"seed": 2, "attempt_cap": 20, "draws": 4, "legal_draws": 4, "test_passing_draws": 1, "found": true, "elapsed_seconds": 0.01332837500012829}},
+    {"solver_status": "BLIND_SPOT_FOUND", "solver_seconds": 0.0018397079984424636, "solver_rows": 1, "row_minimal_verified": true, "reference_status": "BLIND_SPOT_FOUND", "reference_seconds": 0.03486962500028312, "reference_worlds": 10, "reference_test_passing_worlds": 9, "random": {"seed": 3, "attempt_cap": 20, "draws": 2, "legal_draws": 2, "test_passing_draws": 1, "found": true, "elapsed_seconds": 0.007045542000923888}},
+    {"solver_status": "BLIND_SPOT_FOUND", "solver_seconds": 0.0019146249996992992, "solver_rows": 1, "row_minimal_verified": true, "reference_status": "BLIND_SPOT_FOUND", "reference_seconds": 0.03451683399907779, "reference_worlds": 10, "reference_test_passing_worlds": 9, "random": {"seed": 4, "attempt_cap": 20, "draws": 2, "legal_draws": 2, "test_passing_draws": 1, "found": true, "elapsed_seconds": 0.006716459000017494}}
+  ],
+  "cli": {"exit_code": 0, "status": "BLIND_SPOT_FOUND", "rows_sha256": "3aa68b41fe21beb89166e0e32d3467a7e1dfa6923a33e9779ef226e3233da949", "witness_sha256": "ec6220e48347919fca6fa0d4362a46d45ad7a87ce933da4fe9c6fcb7c3551811", "replay_sql_sha256": "7e535ac55fd90cc5fcd6f79dbf4b43e2dbd914df93e1f687a3c4768bb9eecbfe"},
+  "raw_manifest_sha256": "cf9e85851b16b68f9be996d54615bbc6bcba4e3a375a8919711279ed2e761ba6",
+  "reproduction": "At git_sha, run PYTHONPATH=src .venv/bin/python research/benchmarks/run_doppelganger.py examples/doppelganger/nonnegative_amount.json --run-dir research/runs/local/new-phase4-run --repeats 5 --attempts 20; replay the generated witness and execute replay.sql in DuckDB. Compare obligation status, row hash and evaluations, not timings or path-bearing byte hashes.",
+  "sanitization": "Copied from an actual clean committed local run. Local absolute paths, stdout and stderr are omitted; timestamps, outcomes and measurements are unchanged. Raw artifacts remain local and are not independently downloadable."
+}
