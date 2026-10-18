@@ -30,6 +30,11 @@ def test_publish_only_verified_sanitized_run(tmp_path: Path) -> None:
     assert process.returncode == 0, process.stderr
     raw_path = run_dir / "manifest.json"
     golden = ROOT / "examples/no_undo/evidence/witness.json"
+    # Force a dirty *unit fixture* so this regression is independent of whether
+    # the checkout running pytest is clean. This is never published as a run.
+    raw = json.loads(raw_path.read_text())
+    raw["git_dirty"] = True
+    raw_path.write_text(json.dumps(raw), encoding="utf-8")
     output = tmp_path / "published.json"
     publish_command = [
         sys.executable,
@@ -47,7 +52,6 @@ def test_publish_only_verified_sanitized_run(tmp_path: Path) -> None:
     assert "clean" in rejected.stderr
 
     # Synthetic unit fixture: never published as an experiment.
-    raw = json.loads(raw_path.read_text())
     raw["git_dirty"] = False
     raw["git_sha"] = "a" * 40
     raw_path.write_text(json.dumps(raw), encoding="utf-8")
@@ -94,3 +98,20 @@ def test_paired_tiny_reference_benchmark_records_all_repeats(tmp_path: Path) -> 
     assert len(record["samples"]) == 3
     assert all(sample["duckdb_validated"] for sample in record["samples"])
     assert all(sample["reference_worlds_checked"] == 15 for sample in record["samples"])
+
+
+def test_published_phase2_records_match_versioned_evidence() -> None:
+    published = ROOT / "research/runs/published"
+    manifest = json.loads((published / "phase2-35b2001.json").read_text())
+    paired = json.loads((published / "phase2-35b2001-paired.json").read_text())
+    witness = json.loads((ROOT / manifest["published_evidence"]["witness"]).read_text())
+    replay_sql = ROOT / manifest["published_evidence"]["replay_sql"]
+    assert replay_sql.is_file()
+    assert manifest["git_dirty"] is False
+    assert paired["git_dirty"] is False
+    assert manifest["git_sha"] == paired["git_sha"]
+    assert manifest["outcome"]["worlds_sha256"] == witness["worlds_sha256"]
+    assert manifest["outcome"]["metric_values"] == witness["metric_values"]
+    assert paired["summary"]["repeats"] == len(paired["samples"]) == 5
+    assert paired["summary"]["mismatch_count"] == 0
+    assert str(ROOT) not in json.dumps(manifest)
