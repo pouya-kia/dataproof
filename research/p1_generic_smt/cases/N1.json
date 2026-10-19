@@ -1,0 +1,1 @@
+{"table":{"name":"t","columns":[{"name":"g","type":"INTEGER","nullable":false,"domain":[1]},{"name":"x","type":"INTEGER","nullable":true,"domain":[1,null]}],"primary_key":[],"unique":[]},"views":["SELECT g, COUNT(*) AS n FROM t GROUP BY g"],"metric":"SELECT SUM(x) AS q FROM t","max_rows":1,"timeout_ms":10000,"max_memory_mb":256}

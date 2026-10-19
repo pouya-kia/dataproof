@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "table": {"name": "orders", "columns": [{"name": "amount", "type": "INTEGER", "domain": [-1, 0, 1, 2]}]},
+  "max_rows": 2,
+  "timeout_ms": 10000,
+  "max_memory_mb": 256,
+  "seed": 0,
+  "tests": [
+    {"id": "max_two", "sql": "SELECT MAX(amount) AS n FROM orders", "op": "=", "value": 2},
+    {"id": "two_rows", "sql": "SELECT COUNT(*) AS n FROM orders", "op": "=", "value": 2}
+  ],
+  "invariant": {"id": "no_negative_amount", "sql": "SELECT COUNT(*) AS n FROM orders WHERE amount = -1", "op": "=", "value": 0, "rationale": "Synthetic policy: accepted amounts must never be negative."}
+}

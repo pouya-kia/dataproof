@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "table": {"name": "orders", "columns": [{"name": "amount", "type": "INTEGER", "nullable": true, "domain": [-1, 0, null]}]},
+  "max_rows": 2,
+  "timeout_ms": 10000,
+  "max_memory_mb": 256,
+  "seed": 0,
+  "tests": [
+    {"id": "nonnegative_total", "sql": "SELECT SUM(amount) AS n FROM orders", "op": ">=", "value": 0}
+  ],
+  "invariant": {"id": "no_null_amount", "sql": "SELECT COUNT(*) AS n FROM orders WHERE amount IS NULL", "op": "=", "value": 0, "rationale": "Synthetic policy: accepted orders must have a recorded amount."}
+}
